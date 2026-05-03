@@ -1,0 +1,47 @@
+# Claude Code — ne jamais versionner
+CLAUDE.md
+.claude/
+.ai-collab/
+
+# Doc non versionnée
+docs/maquettes
+
+# Documents OC fournis (hors travail du projet)
+docs/**/*.pdf
+docs/**/*.odt
+docs/.~lock.*
+docs/conception/mermaid-diagram-*.png
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+###############
+# Symfony (api/)
+###############
+api/.env.local
+api/.env.local.php
+api/.env.*.local
+api/var/
+api/vendor/
+api/public/bundles/
+api/var/storage/
+
+###############
+# React (front/)
+###############
+front/node_modules/
+front/dist/
+front/.env.local
+front/coverage/
+
+# Cypress
+front/cypress/videos/
+front/cypress/screenshots/

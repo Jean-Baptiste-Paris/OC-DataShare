@@ -1,0 +1,565 @@
+openapi: 3.0.3
+
+info:
+  title: DataShare API
+  version: 0.1.0
+  description: |
+    API REST de DataShare — service de partage de fichiers via lien unique.
+
+    Voir `docs/conception/contrat-interface.md` pour les conventions, le rationale
+    et le mapping User Stories → endpoints.
+
+    **Conventions transverses :**
+    - Auth : JWT Bearer (`Authorization: Bearer <token>`), signé HS256, durée 8 h, sans refresh.
+    - Réponses succès : envelope `{ data: ... }`.
+    - Réponses erreur : RFC 7807 Problem Details (`application/problem+json`).
+    - Casing : camelCase. Dates : ISO 8601 UTC. IDs : UUID v4.
+  contact:
+    name: DataShare MVP
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:8000/api
+    description: Développement local (Symfony built-in server)
+  - url: https://app.datashare.fr/api
+    description: Production (URL prévue, à confirmer au déploiement)
+
+tags:
+  - name: auth
+    description: Inscription, connexion, identité de l'utilisateur courant
+  - name: files
+    description: Gestion des fichiers (privé, propriétaire authentifié)
+  - name: share
+    description: Partage public via lien (métadonnées + téléchargement)
+
+# Par défaut aucune route n'exige d'auth ; chaque endpoint privé override avec `security: [bearerAuth: []]`.
+security: []
+
+paths:
+
+  # =========================================================
+  # Tag: auth
+  # =========================================================
+
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Créer un compte
+      description: |
+        Crée un nouveau compte utilisateur et déclenche un auto-login.
+        La réponse contient le JWT à stocker en `localStorage` côté front.
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterInput'
+            examples:
+              standard:
+                summary: Inscription standard
+                value:
+                  email: user@example.com
+                  password: monMotDePasse123
+      responses:
+        '201':
+          description: Compte créé, JWT retourné (auto-login)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuthResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '409':
+          description: Email déjà utilisé
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://datashare.fr/errors/email-already-exists
+                title: Email already exists
+                status: 409
+                detail: Un compte avec cet email existe déjà.
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Se connecter
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginInput'
+      responses:
+        '200':
+          description: JWT retourné
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/AuthResult'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          description: |
+            Identifiants invalides — message générique (anti-énumération de comptes,
+            OWASP A07). Ne distingue pas `email inconnu` de `password incorrect`.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://datashare.fr/errors/invalid-credentials
+                title: Invalid credentials
+                status: 401
+                detail: Identifiants invalides.
+
+  /me:
+    get:
+      tags: [auth]
+      summary: Récupérer l'utilisateur connecté
+      description: |
+        Utilisé par le front pour afficher l'email dans « Mon espace » et pour
+        vérifier la validité de la session au refresh page (si 401 → rediriger /login).
+      operationId: getCurrentUser
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Profil de l'utilisateur courant
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # =========================================================
+  # Tag: files (privé, propriétaire)
+  # =========================================================
+
+  /files:
+    post:
+      tags: [files]
+      summary: Uploader un fichier (US01)
+      description: |
+        Upload streamé (RAM constante côté serveur, cf. ADR 0001).
+        Limites : taille ≤ 1 Go, extensions blacklistées rejetées (cf. CLAUDE.md ambiguïté #6),
+        validation par magic bytes côté serveur (anti-renommage).
+
+        Le `id` retourné sert directement de share-token. Le front construit l'URL de partage :
+        `${origin}/d/${id}`.
+      operationId: uploadFile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Le fichier à uploader (≤ 1 Go).
+      responses:
+        '201':
+          description: Fichier créé
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/FileSummary'
+        '400':
+          description: Champ `file` manquant ou requête mal formée
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          description: Fichier > 1 Go
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://datashare.fr/errors/file-too-large
+                title: File too large
+                status: 413
+                detail: La taille du fichier dépasse la limite autorisée (1 Go).
+        '415':
+          description: |
+            Type de fichier rejeté : extension blacklistée OU magic bytes ne
+            correspondant pas au type déclaré.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+              example:
+                type: https://datashare.fr/errors/file-type-rejected
+                title: File type rejected
+                status: 415
+                detail: Le type de fichier n'est pas autorisé.
+
+    get:
+      tags: [files]
+      summary: Lister mes fichiers (US05 — historique)
+      description: |
+        Retourne la liste des fichiers du user authentifié, triée par date d'envoi
+        décroissante (`createdAt DESC`). Pas de pagination en MVP.
+      operationId: listMyFiles
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Liste des fichiers de l'utilisateur courant
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FileSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /files/{id}:
+    delete:
+      tags: [files]
+      summary: Supprimer un fichier (US06)
+      description: |
+        Supprime le fichier. Le lien de partage associé devient immédiatement invalide (404).
+
+        Le 404 unifie « fichier inexistant » et « fichier d'un autre user » pour éviter
+        l'énumération d'IDs (anti-leak OWASP A01).
+      operationId: deleteFile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID du fichier à supprimer.
+      responses:
+        '204':
+          description: Fichier supprimé (pas de body, pas d'envelope)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: |
+            Fichier inexistant OU appartenant à un autre user — unifié anti-énumération.
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  # =========================================================
+  # Tag: share (public, par lien)
+  # =========================================================
+
+  /share/{token}:
+    get:
+      tags: [share]
+      summary: Métadonnées d'un fichier partagé (US02 — landing page)
+      description: |
+        Vue publique d'un fichier — consommée par la landing page React du destinataire.
+
+        Pas d'auth requise : le token (UUID v4, 122 bits d'entropie) protège contre
+        l'énumération par brute-force.
+
+        Pas d'`id` ni d'owner dans la réponse (privacy).
+      operationId: getSharedFileMetadata
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Métadonnées du fichier partagé
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    $ref: '#/components/schemas/SharedFile'
+        '404':
+          description: Token ne correspond à aucun fichier (jamais créé OU supprimé entre-temps)
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+  /share/{token}/download:
+    get:
+      tags: [share]
+      summary: Télécharger un fichier partagé (US02 — stream)
+      description: |
+        Stream binaire du fichier (RAM constante, cf. ADR 0001).
+
+        `Content-Disposition: attachment` force le download au lieu de l'inline →
+        mitigation XSS via fichiers HTML/SVG servis sur le même domaine.
+
+        Encodage RFC 5987 sur le filename pour gérer les caractères non-ASCII.
+      operationId: downloadSharedFile
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Stream binaire du fichier
+          headers:
+            Content-Type:
+              schema:
+                type: string
+              description: Le `mimeType` stocké du fichier (ex. `application/pdf`, `image/jpeg`)
+            Content-Length:
+              schema:
+                type: integer
+                format: int64
+              description: Taille en octets
+            Content-Disposition:
+              schema:
+                type: string
+              description: |
+                Format : `attachment; filename="<name>"; filename*=UTF-8''<encoded-name>`.
+                Le `filename*=` (RFC 5987) prime sur les clients modernes ; le `filename="..."`
+                reste pour la compatibilité avec les vieux clients.
+              example: attachment; filename="rapport.pdf"; filename*=UTF-8''rapport.pdf
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Token ne correspond à aucun fichier
+          content:
+            application/problem+json:
+              schema:
+                $ref: '#/components/schemas/Problem'
+
+# =========================================================
+# Components
+# =========================================================
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT signé HS256, durée 8 h, payload `{ sub, iat, exp }`. Stockage front en
+        `localStorage`. Cf. ADR 0002 (révisé 2026-04-28).
+
+  schemas:
+
+    User:
+      type: object
+      description: Utilisateur authentifié
+      required: [id, email, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-04-28T14:32:11Z'
+
+    AuthResult:
+      type: object
+      description: Résultat d'une authentification (register ou login) — token + user
+      required: [token, user]
+      properties:
+        token:
+          type: string
+          description: JWT signé HS256, à stocker en `localStorage` côté front
+          example: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJpYXQiOjE3NjE2NjMyMzEsImV4cCI6MTc2MTY5MjAzMX0.signature
+        user:
+          $ref: '#/components/schemas/User'
+
+    RegisterInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          description: Adresse email (lowercased côté serveur à l'écriture)
+        password:
+          type: string
+          format: password
+          minLength: 8
+          description: Mot de passe (min 8 caractères, US03)
+
+    LoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+
+    FileSummary:
+      type: object
+      description: |
+        Représentation d'un fichier (vue propriétaire). Le `id` sert aussi de share-token public.
+      required: [id, name, sizeBytes, mimeType, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: rapport.pdf
+        sizeBytes:
+          type: integer
+          format: int64
+          minimum: 1
+          example: 1048576
+        mimeType:
+          type: string
+          example: application/pdf
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-04-28T14:32:11Z'
+
+    SharedFile:
+      type: object
+      description: |
+        Vue publique d'un fichier partagé (landing page destinataire).
+        Pas d'`id` (le destinataire l'a déjà dans l'URL) ni d'owner (privacy).
+      required: [name, sizeBytes, mimeType, createdAt]
+      properties:
+        name:
+          type: string
+        sizeBytes:
+          type: integer
+          format: int64
+        mimeType:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Problem:
+      type: object
+      description: |
+        RFC 7807 Problem Details for HTTP APIs.
+        Content-Type associé : `application/problem+json`.
+      required: [type, title, status]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI identifiant le type d'erreur (déréférençable ou non)
+          example: https://datashare.fr/errors/validation-failed
+        title:
+          type: string
+          description: Description courte (humaine, anglais)
+          example: Validation failed
+        status:
+          type: integer
+          description: Code HTTP
+          example: 400
+        detail:
+          type: string
+          description: Description détaillée (humaine, français — locale du projet)
+          example: Plusieurs champs sont invalides.
+        instance:
+          type: string
+          format: uri
+          description: URI de l'occurrence spécifique (optionnel)
+
+    ValidationProblem:
+      description: |
+        Extension de Problem pour les erreurs de validation 400 — ajoute un champ
+        `errors` listant les violations par champ.
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            errors:
+              type: object
+              description: Map des messages d'erreur par champ
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+              example:
+                email: [Format invalide]
+                password: [Au moins 8 caractères requis]
+
+  responses:
+
+    Unauthorized:
+      description: Token absent, invalide ou expiré
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+          example:
+            type: https://datashare.fr/errors/unauthenticated
+            title: Unauthenticated
+            status: 401
+            detail: Token d'authentification requis ou invalide.
+
+    ValidationError:
+      description: Données de la requête invalides
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ValidationProblem'
+          example:
+            type: https://datashare.fr/errors/validation-failed
+            title: Validation failed
+            status: 400
+            detail: Plusieurs champs sont invalides.
+            errors:
+              email: [Format invalide]
+              password: [Au moins 8 caractères requis]
