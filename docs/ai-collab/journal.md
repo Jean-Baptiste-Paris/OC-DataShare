@@ -113,6 +113,31 @@ Binômage piloté par le user. Sur le schéma d'architecture, posture de **copil
 
 ---
 
+## Séance 6 — 2026-05-04
+
+**Contexte :** finalisation du socle technique (Étape 2). Configuration Symfony côté env, génération des clés JWT, création de la BDD, configuration vitest côté front, push du repo sur GitHub.
+
+### Posture adoptée
+Binômage piloté par le user. Validations implicites (« done », « yes ») à chaque étape.
+
+### Tâches confiées
+- Création de `api/.env.local` (DATABASE_URL PostgreSQL 18, JWT_SECRET_KEY/PUBLIC_KEY, STORAGE_PATH, CORS_ALLOW_ORIGIN).
+- Génération des clés JWT via `lexik:jwt:generate-keypair`.
+- Création de la base `datashare` via `doctrine:database:create`, validation du schéma.
+- Démarrage et smoke test du serveur Symfony (http://127.0.0.1:8000, PHP 8.5.4).
+- Configuration de `vite.config.ts` : section `test` (jsdom, setupFiles), proxy `/api` via `VITE_API_URL`.
+- Création de `front/src/test/setup.ts` (import jest-dom).
+- Ajout des types `vitest/globals` dans `tsconfig.app.json`.
+
+### Supervision et corrections
+- **Ports et proxy hardcodés :** le copilote avait mis `port: 5173` et `'http://127.0.0.1:8000'` en dur dans `vite.config.ts`. Le user a signalé le problème. Correction : suppression du port (valeur par défaut Vite), proxy via `process.env.VITE_API_URL` avec fallback, valeur dans `front/.env.local` (non versionné).
+
+### Apports et limites constatés
+- **Apport :** mise en place complète du socle en une séance courte (env, BDD, JWT, test runner, proxy).
+- **Limite :** réflexe de hardcoder les valeurs de configuration au lieu de les externaliser — corrigé après remarque du user.
+
+---
+
 ## Séance 4 — 2026-04-25
 
 **Contexte :** reprise après plusieurs jours d'interruption. Passe d'arbitrage des 5 ambiguïtés restantes, rédaction d'un ADR détaillé sur la stratégie d'authentification JWT, et arbitrage de la stack technique complète. Séance longue et dense, structurante pour tout le reste du projet.

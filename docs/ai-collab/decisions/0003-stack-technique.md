@@ -174,7 +174,7 @@ Stockage **FS local** dans un répertoire dédié hors du repo (ex. `var/storage
 | **Framework front** | React | 18+ | SPA, composants, hooks |
 | **Build front** | Vite | latest | Bundling rapide, dev server |
 | **Client HTTP front** | Axios | latest | Support natif `xsrfCookieName` / `xsrfHeaderName` |
-| **BDD** | PostgreSQL | 15+ | Stockage relationnel des métadonnées |
+| **BDD** | PostgreSQL | 18 | Stockage relationnel des métadonnées |
 | **Stockage fichiers** | FS local | — | Via abstraction `StorageInterface` |
 | **Tests back** | PHPUnit | (Symfony bundle) | Unitaires + intégration |
 | **Tests front** | Vitest + React Testing Library | latest | Unitaires + intégration |

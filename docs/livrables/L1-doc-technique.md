@@ -32,7 +32,7 @@
 | Gestion d'état | Zustand | Redux, Jotai, React Context | Léger (~1 ko), API minimaliste, actions async intégrées dans le store. Évite la verbosité Redux pour un MVP à 2 entités. |
 | Build front | Vite | Webpack, Parcel | Bundling rapide, dev server natif, intégration React + TS sans config |
 | Client HTTP | Axios | Fetch API, TanStack Query | Interceptors natifs : injection du header `Authorization: Bearer` et gestion centralisée des 401 sans wrapper maison. Évite le boilerplate répété sur chaque appel API. |
-| Base de données | PostgreSQL 15+ | MongoDB | Modèle DataShare 100 % relationnel (User 1-N File, état enum). Mongo serait artificiel. Standard de l'écosystème Django (transférable pro). |
+| Base de données | PostgreSQL 18 | MongoDB | Modèle DataShare 100 % relationnel (User 1-N File, état enum). Mongo serait artificiel. Standard de l'écosystème Django (transférable pro). |
 | Stockage fichiers | FS local + abstraction `StorageInterface` | AWS S3 | Choix pédagogique : démontre DIP (`FileService` dépend de l'abstraction). Migration S3 en V2 sans toucher au code métier. Cohérent ADR 0001. |
 | Tests back | PHPUnit + Symfony `KernelTestCase` | — | Standard Symfony, isolation BDD propre |
 | Tests front | Vitest + React Testing Library | Jest, Cypress Component | Standard 2026 pour React + Vite |
