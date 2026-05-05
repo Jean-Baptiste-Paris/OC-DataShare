@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Exception;
 
-class EmailAlreadyExistsException extends \RuntimeException
+use RuntimeException;
+
+class EmailAlreadyExistsException extends RuntimeException
 {
     public function __construct(string $email)
     {
