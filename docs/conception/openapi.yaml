@@ -47,8 +47,8 @@ paths:
       tags: [auth]
       summary: Créer un compte
       description: |
-        Crée un nouveau compte utilisateur et déclenche un auto-login.
-        La réponse contient le JWT à stocker en `localStorage` côté front.
+        Crée un nouveau compte utilisateur. La réponse ne contient pas de JWT :
+        pour obtenir un token, appeler ensuite `POST /auth/login`.
       operationId: registerUser
       requestBody:
         required: true
@@ -64,7 +64,7 @@ paths:
                   password: monMotDePasse123
       responses:
         '201':
-          description: Compte créé, JWT retourné (auto-login)
+          description: Compte créé
           content:
             application/json:
               schema:
@@ -72,7 +72,7 @@ paths:
                 required: [data]
                 properties:
                   data:
-                    $ref: '#/components/schemas/AuthResult'
+                    $ref: '#/components/schemas/User'
         '400':
           $ref: '#/components/responses/ValidationError'
         '409':
@@ -130,8 +130,8 @@ paths:
       tags: [auth]
       summary: Récupérer l'utilisateur connecté
       description: |
-        Utilisé par le front pour afficher l'email dans « Mon espace » et pour
-        vérifier la validité de la session au refresh page (si 401 → rediriger /login).
+        Retourne le profil de l'utilisateur authentifié, identifié par le JWT.
+        Renvoie `401` si le token est absent, invalide ou expiré.
       operationId: getCurrentUser
       security:
         - bearerAuth: []
@@ -162,8 +162,9 @@ paths:
         Limites : taille ≤ 1 Go, extensions blacklistées rejetées (cf. CLAUDE.md ambiguïté #6),
         validation par magic bytes côté serveur (anti-renommage).
 
-        Le `id` retourné sert directement de share-token. Le front construit l'URL de partage :
-        `${origin}/d/${id}`.
+        Le `id` retourné est public et sert directement de share-token : il peut être
+        utilisé tel quel comme `{token}` dans `GET /share/{token}` et
+        `GET /share/{token}/download`.
       operationId: uploadFile
       security:
         - bearerAuth: []
@@ -386,8 +387,8 @@ components:
       scheme: bearer
       bearerFormat: JWT
       description: |
-        JWT signé HS256, durée 8 h, payload `{ sub, iat, exp }`. Stockage front en
-        `localStorage`. Cf. ADR 0002 (révisé 2026-04-28).
+        JWT signé HS256, durée 8 h, payload `{ sub, iat, exp }`. À présenter via le
+        header `Authorization: Bearer <token>` sur les routes protégées.
 
   schemas:
 
@@ -409,12 +410,12 @@ components:
 
     AuthResult:
       type: object
-      description: Résultat d'une authentification (register ou login) — token + user
+      description: Résultat d'une connexion réussie — token + user (renvoyé uniquement par `/auth/login`)
       required: [token, user]
       properties:
         token:
           type: string
-          description: JWT signé HS256, à stocker en `localStorage` côté front
+          description: JWT signé HS256, à présenter via `Authorization: Bearer <token>` sur les routes protégées
           example: eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI1NTBlODQwMC1lMjliLTQxZDQtYTcxNi00NDY2NTU0NDAwMDAiLCJpYXQiOjE3NjE2NjMyMzEsImV4cCI6MTc2MTY5MjAzMX0.signature
         user:
           $ref: '#/components/schemas/User'

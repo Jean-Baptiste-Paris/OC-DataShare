@@ -105,7 +105,7 @@ Pour les erreurs de validation 400, le champ `errors` (extension RFC 7807) liste
 |---|---|---|
 | US01 — Upload | `POST /api/files` | multipart/form-data, streaming back, ≤ 1 Go |
 | US02 — Téléchargement | `GET /api/share/{token}` (métadonnées) + `GET /api/share/{token}/download` (stream) | URL email = route SPA `/d/{token}` qui appelle ces deux endpoints |
-| US03 — Création de compte | `POST /api/auth/register` | Auto-login : retourne le JWT en réponse |
+| US03 — Création de compte | `POST /api/auth/register` | Pas de JWT en réponse ; le token s'obtient via `/auth/login` (cf. ADR 0004) |
 | US04 — Connexion | `POST /api/auth/login` | Pas d'endpoint logout (cf. ADR 0002 D6 révisé) |
 | US05 — Historique | `GET /api/files` | Tri `createdAt DESC`, pas de pagination MVP |
 | US06 — Suppression | `DELETE /api/files/{id}` | Hard delete (storage + BDD) |
@@ -122,7 +122,7 @@ Pour les erreurs de validation 400, le champ `errors` (extension RFC 7807) liste
 
 - **Auth** : non
 - **Body** : `{ email, password }` — `password ≥ 8` chars
-- **Succès 201** : `{ data: { token, user: { id, email, createdAt } } }` — auto-login
+- **Succès 201** : `{ data: { user: { id, email, createdAt } } }` — pas de token (cf. ADR 0004 ; le token s'obtient via `/auth/login`)
 - **Erreurs** : `400` (validation) | `409` (email déjà pris)
 
 ### 4.2 `POST /api/auth/login`
@@ -182,7 +182,7 @@ Pour les erreurs de validation 400, le champ `errors` (extension RFC 7807) liste
 | 1 | OpenAPI 3.0.3 (pas 3.1) | Validée — outillage Symfony plus rodé |
 | 2 | Tout sous `/api`, pas de versioning | Validée |
 | 3 | Ressource `share` cohérente pour métadonnées + download | Validée — un seul controller Symfony |
-| 4 | Auto-login sur register | Validée — UX standard, pas d'email de vérification (cf. ambiguïté #1) |
+| 4 | **Pas d'auto-login** sur register (le token s'obtient uniquement via `/auth/login`) | Révisée 2026-05-04 — SRP entre `register` et `login` + extensibilité pour une future vérification d'email. ADR 0004 à rédiger. |
 | 5 | RFC 7807 pour les erreurs | Validée — standard IETF |
 | 6 | Envelope `data` côté succès | Validée — préparation V2 sans breaking change |
 | 7 | Pas d'endpoint logout serveur | ADR 0002 D6 révisé — JWT Bearer = stateless |
