@@ -40,3 +40,31 @@ export function validateRegisterForm(values: RegisterFormValues): RegisterFormEr
 export function isFormValid(errors: RegisterFormErrors): boolean {
   return Object.keys(errors).length === 0;
 }
+
+export type LoginFormValues = {
+  email: string;
+  password: string;
+};
+
+export type LoginFormErrors = Partial<Record<keyof LoginFormValues, string>>;
+
+export function validateLoginForm(values: LoginFormValues): LoginFormErrors {
+  const errors: LoginFormErrors = {};
+
+  const email = values.email.trim();
+  if (email === '') {
+    errors.email = "L'email est obligatoire.";
+  } else if (!EMAIL_PATTERN.test(email)) {
+    errors.email = "Format d'email invalide.";
+  }
+
+  if (values.password === '') {
+    errors.password = 'Le mot de passe est obligatoire.';
+  }
+
+  return errors;
+}
+
+export function isLoginFormValid(errors: LoginFormErrors): boolean {
+  return Object.keys(errors).length === 0;
+}

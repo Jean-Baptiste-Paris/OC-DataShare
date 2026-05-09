@@ -5,10 +5,11 @@ import { authService } from './authService';
 import { isRegisterError } from '@/types/auth';
 
 vi.mock('@/lib/apiClient', () => ({
-  apiClient: { post: vi.fn() },
+  apiClient: { post: vi.fn(), get: vi.fn() },
 }));
 
 const mockedPost = vi.mocked(apiClient.post);
+const mockedGet = vi.mocked(apiClient.get);
 
 function buildAxiosError(status: number, data: unknown): AxiosError {
   const response = {
@@ -108,5 +109,76 @@ describe('authService.register', () => {
     await expect(
       authService.register({ email: 'foo@bar.fr', password: 'plainPassword' }),
     ).rejects.toMatchObject({ kind: 'network' });
+  });
+});
+
+describe('authService.login', () => {
+  beforeEach(() => {
+    mockedPost.mockReset();
+  });
+
+  it('renvoie le token en cas de succès (200)', async () => {
+    mockedPost.mockResolvedValueOnce({
+      data: { data: { token: 'jwt-token' } },
+    } as AxiosResponse);
+
+    const token = await authService.login({
+      email: 'foo@bar.fr',
+      password: 'plainPassword',
+    });
+
+    expect(token).toBe('jwt-token');
+    expect(mockedPost).toHaveBeenCalledWith('/api/auth/login', {
+      email: 'foo@bar.fr',
+      password: 'plainPassword',
+    });
+  });
+
+  it("lève une erreur 'invalid-credentials' sur 401", async () => {
+    mockedPost.mockRejectedValueOnce(
+      buildAxiosError(401, { code: 401, message: 'Invalid credentials.' }),
+    );
+
+    await expect(
+      authService.login({ email: 'foo@bar.fr', password: 'wrong' }),
+    ).rejects.toMatchObject({ kind: 'invalid-credentials' });
+  });
+
+  it("lève une erreur 'network' sur 5xx", async () => {
+    mockedPost.mockRejectedValueOnce(buildAxiosError(503, '<html>...</html>'));
+
+    await expect(
+      authService.login({ email: 'foo@bar.fr', password: 'plainPassword' }),
+    ).rejects.toMatchObject({ kind: 'network' });
+  });
+});
+
+describe('authService.me', () => {
+  beforeEach(() => {
+    mockedGet.mockReset();
+  });
+
+  it('renvoie le User en cas de succès (200)', async () => {
+    const user = {
+      id: 'u-1',
+      email: 'foo@bar.fr',
+      createdAt: '2026-05-09T10:00:00+00:00',
+    };
+    mockedGet.mockResolvedValueOnce({
+      data: { data: user },
+    } as AxiosResponse);
+
+    const result = await authService.me();
+
+    expect(result).toEqual(user);
+    expect(mockedGet).toHaveBeenCalledWith('/api/auth/me');
+  });
+
+  it("propage l'erreur axios si le token est rejeté (401)", async () => {
+    mockedGet.mockRejectedValueOnce(
+      buildAxiosError(401, { code: 401, message: 'JWT Token not found' }),
+    );
+
+    await expect(authService.me()).rejects.toBeInstanceOf(AxiosError);
   });
 });

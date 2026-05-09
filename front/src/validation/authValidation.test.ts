@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { isFormValid, validateRegisterForm } from './authValidation';
+import {
+  isFormValid,
+  isLoginFormValid,
+  validateLoginForm,
+  validateRegisterForm,
+} from './authValidation';
 
 describe('validateRegisterForm', () => {
   const valid = {
@@ -64,5 +69,45 @@ describe('isFormValid', () => {
 
   it('retourne false dès une clé', () => {
     expect(isFormValid({ email: 'oups' })).toBe(false);
+  });
+});
+
+describe('validateLoginForm', () => {
+  const valid = { email: 'foo@bar.fr', password: 'whatever' };
+
+  it("ne renvoie aucune erreur sur un formulaire valide", () => {
+    expect(validateLoginForm(valid)).toEqual({});
+  });
+
+  it("renvoie une erreur email obligatoire", () => {
+    expect(validateLoginForm({ ...valid, email: '' }).email).toBe(
+      "L'email est obligatoire.",
+    );
+  });
+
+  it("renvoie une erreur format d'email", () => {
+    expect(validateLoginForm({ ...valid, email: 'not-an-email' }).email).toBe(
+      "Format d'email invalide.",
+    );
+  });
+
+  it("renvoie une erreur password obligatoire", () => {
+    expect(validateLoginForm({ ...valid, password: '' }).password).toBe(
+      'Le mot de passe est obligatoire.',
+    );
+  });
+
+  it("n'impose pas de longueur minimale (autorité côté serveur)", () => {
+    expect(validateLoginForm({ ...valid, password: 'x' }).password).toBeUndefined();
+  });
+});
+
+describe('isLoginFormValid', () => {
+  it('retourne true sur un objet vide', () => {
+    expect(isLoginFormValid({})).toBe(true);
+  });
+
+  it('retourne false dès une clé', () => {
+    expect(isLoginFormValid({ email: 'oups' })).toBe(false);
   });
 });
