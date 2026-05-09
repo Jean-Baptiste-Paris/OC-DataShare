@@ -50,7 +50,15 @@ function renderRegister() {
 
 describe('RegisterPage', () => {
   beforeEach(() => {
-    useAuthStore.getState().reset();
+    useAuthStore.setState({
+      token: null,
+      user: null,
+      registerStatus: 'idle',
+      registerError: null,
+      loginStatus: 'idle',
+      loginError: null,
+    });
+    localStorage.clear();
     mockedPost.mockReset();
     lastFlashSuccess = undefined;
   });
@@ -61,7 +69,8 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText('Mot de passe')).toBeInTheDocument();
     expect(screen.getByLabelText('Vérification du mot de passe')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Créer un compte' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: "J'ai déjà un compte" })).toBeInTheDocument();
+    // Doublon volontaire : Header CTA + lien borderless du form, même action.
+    expect(screen.getAllByRole('button', { name: 'Connexion' })).toHaveLength(2);
   });
 
   it("affiche les erreurs de validation client et n'appelle pas l'API", async () => {

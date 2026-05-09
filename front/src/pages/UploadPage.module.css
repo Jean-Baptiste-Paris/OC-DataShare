@@ -25,33 +25,14 @@
   gap: var(--space-lg);
 }
 
-@media (min-width: 768px) {
-  .card {
-    max-width: 760px;
-    padding: var(--space-xl);
-  }
-}
-
 .title {
   text-align: center;
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
 }
 
-@media (min-width: 768px) {
-  .title {
-    font-size: var(--font-size-3xl);
-  }
-}
-
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-}
-
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
+.placeholder {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }

@@ -22,10 +22,10 @@ const INITIAL_VALUES: RegisterFormValues = {
 
 export function RegisterPage() {
   const navigate = useNavigate();
-  const status = useAuthStore((s) => s.status);
-  const error = useAuthStore((s) => s.error);
+  const status = useAuthStore((s) => s.registerStatus);
+  const error = useAuthStore((s) => s.registerError);
   const register = useAuthStore((s) => s.register);
-  const reset = useAuthStore((s) => s.reset);
+  const reset = useAuthStore((s) => s.resetRegister);
 
   const [values, setValues] = useState<RegisterFormValues>(INITIAL_VALUES);
   const [clientErrors, setClientErrors] = useState<RegisterFormErrors>({});
@@ -81,7 +81,7 @@ export function RegisterPage() {
     <div className={styles.page}>
       <Header>
         <Button variant="action" onClick={() => navigate('/login')}>
-          Se connecter
+          Connexion
         </Button>
       </Header>
 
@@ -134,7 +134,7 @@ export function RegisterPage() {
                 onClick={() => navigate('/login')}
                 disabled={isPending}
               >
-                J'ai déjà un compte
+                Connexion
               </Button>
 
               <Button type="submit" variant="primary" disabled={isPending}>
