@@ -2,13 +2,16 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
+  max-width: var(--container-max-width);
+  margin-inline: auto;
   padding: var(--space-lg) var(--space-xl);
   background: transparent;
 }
 
 .logo {
   font-family: inherit;
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
   letter-spacing: inherit;
   color: var(--color-text);
@@ -20,10 +23,6 @@
   .header {
     padding: var(--space-md) var(--space-lg);
   }
-
-  .logo {
-    font-size: var(--font-size-xl);
-  }
 }
 
 /* === Container query : pour les previews embarquées (page DS notamment) ===
@@ -32,10 +31,6 @@
 @container (max-width: 480px) {
   .header {
     padding: var(--space-md) var(--space-lg);
-  }
-
-  .logo {
-    font-size: var(--font-size-xl);
   }
 }
 
