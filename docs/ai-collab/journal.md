@@ -138,6 +138,65 @@ Binômage piloté par le user. Validations implicites (« done », « yes ») à
 
 ---
 
+## Séance 7 — 2026-05-05
+
+**Contexte :** démarrage de l'Étape 3 (implémentation US03 — création de compte). Construction full-stack côté back de toute la pyramide (Entity → Repository → DTO → Service → Controller → Tests). Mise en place de l'infrastructure de test PHPUnit. Tentatives infructueuses d'installer un driver de coverage (PCOV/Xdebug) sur PHP 8.5 + macOS Homebrew. Séance dense, en majorité du code applicatif, avec un fil pédagogique granulaire suite à un signal explicite du user.
+
+### Posture adoptée
+Démarrage en posture **junior à briefer** (le copilote propose, le user valide point par point). Recalibration explicite vers une **pédagogie ultra-granulaire** après que le user a signalé « C'est trop compliqué pour moi. On découpe davantage, j'apprends » : passage à ≤ 1 concept par tour, validation question par question, carte mentale conceptuelle posée avant tout code. Plus rapide sur les concepts déjà maîtrisés (Repository pattern, mocks/stubs basiques, RFC concepts) ; ralentissement sur Symfony/Doctrine.
+
+### Tâches confiées
+- **Révision du contrat API** suite à décision du user de retirer l'auto-login sur `/auth/register` (ADR 0004 à rédiger). Impact 7 endroits dans `openapi.yaml` + `contrat-interface.md`.
+- **Implémentation back complète US03** :
+  - `User` Entity (UUIDv7 généré côté PHP, email VARCHAR(254) RFC 5321 normalisé lowercase+trim dans le setter, `password` avec `#[Ignore]` anti-fuite serializer, `createdAt` immuable, `UniqueEntity` + contrainte SQL unique en double-couche, implémente `UserInterface` + `PasswordAuthenticatedUserInterface`).
+  - Migration Doctrine + application sur `datashare`.
+  - `UserRepository` héritant de `ServiceEntityRepository` : `findOneByEmail` (pattern « intention métier »), `save($user, $flush)` (pragmatique Symfony).
+  - DTO d'entrée `RegisterRequest` (`final readonly`, constructor promotion, contraintes `Assert\Email/NotBlank/Length`).
+  - DTO de sortie `UserResponse` avec named constructor `fromUser()` (séparation Entity/contrat HTTP).
+  - Exception métier `EmailAlreadyExistsException` (héritage `RuntimeException`, message contextuel pour logs).
+  - `UserRegistrationService` (orchestration : normalisation → lookup → hash → save), avec injection au constructeur de `UserRepository` + `UserPasswordHasherInterface`.
+  - `AuthController::register` avec `#[MapRequestPayload]` (désérialisation + validation auto), réponse 201 envelope `{ data }`, erreur 409 RFC 7807 `application/problem+json`.
+- **Pyramide de tests (25 tests verts, 50 assertions, 0.4 s)** :
+  - `UserRegistrationServiceTest` (4 tests, mocks/stubs PHPUnit) : succès, conflit email, normalisation, hash en clair vers hasher.
+  - `UserTest` (12 tests dont 6 via DataProvider) : UUIDv7, `createdAt`, normalisation email (3 cas), `getRoles`, `getUserIdentifier`, `eraseCredentials`.
+  - `AuthControllerRegisterTest` (5 tests, `WebTestCase`) : 201 nominal, 409 sur conflit, 422 sur email invalide / mdp court, 4xx sur champs manquants.
+  - `UserRepositoryTest` (4 tests, `KernelTestCase`) : lecture présente/absente, save sans/avec flush.
+- **Infrastructure de test** : install `symfony/test-pack`, BDD `datashare_test` créée + migrée via `dbname_suffix '_test'` Doctrine, `.env.test.local` non versionné.
+- **Configuration coverage** : exclusions dans `phpunit.dist.xml` (DTOs, Exception, Kernel) alignées sur l'ambiguïté #8 résolue.
+
+### Supervision et corrections
+- **Carte mentale conceptuelle exigée par le user** avant tout code Symfony. Un premier plan dense en « 6 lots parallèles + 4 questions » a été rejeté ; recalibrage vers une décomposition ≤ 1 concept par tour. Règle persistée en mémoire (`feedback_pedagogie_granulaire.md`).
+- **Convention `use` vs FQN inline** : le copilote a écrit `\DateTimeInterface::ATOM` inline dans `UserResponse` alors que la convention DataShare est l'import via `use` en haut de fichier (déjà appliquée dans `User.php`). Le user a corrigé. Règle persistée en mémoire (`feedback_use_imports.md`), à appliquer aussi à `extends \RuntimeException` etc.
+- **Descriptions OpenAPI orientées consommateur (règle élargie)** : le copilote a écrit « le front redirige vers /login » dans le contrat API. Le user a recadré : « le back ne décide pas du fonctionnement du front ». Règle existante en mémoire élargie : interdit symétrique (ni implémentation interne back, ni prescription du consommateur).
+- **Cartographie incomplète des couches** : la liste initiale des pièces Symfony pour US03 omettait Repository et Service comme couches distinctes (Repository glissé en passant au mouvement 3, Service absent). Le user a pointé l'omission. Cartographie corrigée en 4 couches Controller / Service / Repository / Entity, avec argument oral SRP/testabilité/réutilisabilité.
+- **Décision register sans auto-login (initiée par le user, raisonnement SOLID)** : le user a challengé l'auto-login proposé en conception au motif de SRP back. Discussion menée à un argument oral solide (extensibilité future = vérification email). ADR 0004 à rédiger.
+- **Trade-off anti-énumération sur `/register` (initiée par le user)** : le user a soulevé l'asymétrie avec `/login`. Décision documentée : 409 explicite assumé en MVP (pas d'infra mail), mitigation V2 (option email transactionnel + rate limiter), trace à porter dans `SECURITY.md`.
+- **Code dupliqué détecté par le user** : `409` apparaissait deux fois dans la construction de réponse (body RFC 7807 + statut HTTP). Refactor avec `$status` en variable locale ; double présence body+statut conservée car requise par la spec RFC 7807.
+- **Tests unitaires manquants** : le copilote a initialement proposé un test curl bout-en-bout pour valider US03. Le user a recadré : pyramide complète obligatoire (consigne OC + critère 70 %).
+- **Distinction mock vs stub** : PHPUnit 13 a signalé des deprecations sur `with()` sans `expects()`. Occasion d'expliciter la taxonomie Meszaros (stub = retourne ; mock = vérifie) et de refactor les tests Service en `createStub` quand il n'y avait pas d'expectation.
+- **Diagnostic d'erreur runtime** : la première version de `UserTest` appelait `$uuid->getVersion()` qui n'existe pas sur `UuidV7` ; correction par `assertInstanceOf(UuidV7::class, ...)`.
+- **Fonctionnalités critiques** rappelées par le user en cours de séance (« il faut une pyramide de test ») — preuve que la consigne « identifier vos fonctionnalités critiques » est mieux respectée par couvercle haut que par couvercle bas (le user a guidé la stratégie).
+
+### Apports et limites constatés
+- **Apport — Pyramide de tests posée tôt et complète** : 25 tests verts couvrant les 4 niveaux (unit service, unit entity, integration repo, functional HTTP) en moins de 0.5 s. Stratégie d'exclusion coverage explicite alignée sur l'ambiguïté #8 résolue.
+- **Apport — Concepts SOLID raccrochés à des décisions concrètes** : DIP (autowiring + interfaces), ISP (`UserInterface` + `PasswordAuthenticatedUserInterface` séparés), SRP (Service/Controller, register/login séparés), OCP (Service ouvert à l'ajout futur d'événements). Plusieurs questions probables à l'oral pré-armées.
+- **Apport — Itération vivante conception ↔ code** : raffinement du contrat API (suppression auto-login + descriptions consommateur) en cours d'implémentation, pas après-coup. Preuve qu'on ne « fige » pas la conception et qu'on ajuste honnêtement quand un meilleur design émerge.
+- **Apport — Adaptation pédagogique** : reconnaissance et recalibrage explicite après signal du user (« on découpe davantage »). Comparaison Doctrine/Django, PHP/Python, Symfony Security/DRF utilisée en permanence pour ancrer.
+- **Limite — Coverage non mesuré ce palier** : 4 tentatives d'install drivers (PCOV via pecl, PCOV via brew tap, Xdebug via brew tap, PCOV avec `CFLAGS`) ont toutes échoué sur le combo PHP 8.5 + macOS Homebrew (pas de package précompilé en mai 2026, compilation en succès puis install final bloqué). **Dette explicite tracée**, à reprendre en début de prochaine séance ou via Herd.
+- **Limite — Biais initial de cartographie** : oubli des couches Service/Repository dans le mapping mouvements↔Symfony. Pointé par le user. Risque structurel à surveiller : « le copilote pose trop vite des plans incomplets ».
+- **Limite — Sur-densification récurrente** : tendance répétée à proposer des plans denses (« 6 lots + 4 questions ») même après que le user a signalé qu'il découvre la stack. Coût d'attention pour le user, signal qui s'est répété 3 fois sur la séance avant recalibrage durable.
+- **Limite — Conventions de code non tenues automatiquement** : `use` vs FQN inline oublié à 2 fichiers. Symptôme d'un défaut d'auto-vérification en haut de fichier. Mémoire mise à jour.
+
+### Dettes ouvertes en fin de séance
+- **ADR 0004** à rédiger : « Pas d'auto-login sur /auth/register » (format Nygard, SRP + extensibilité vérif email).
+- **`SECURITY.md`** ébauche : politique mdp, JWT, anti-énumération `/login`, trade-off `/register` assumé.
+- **`TESTING.md`** ébauche : pyramide actuelle, dette coverage tracée.
+- **Firewall `security.yaml`** à durcir : autoriser explicitement `/api/auth/*` en public (préparation US04).
+- **US04 (login)** : majoritairement de la config Symfony Security + Lexik, peu de code applicatif.
+- **Coverage local** : à reprendre à tête reposée (Herd ou autre).
+
+---
+
 ## Séance 4 — 2026-04-25
 
 **Contexte :** reprise après plusieurs jours d'interruption. Passe d'arbitrage des 5 ambiguïtés restantes, rédaction d'un ADR détaillé sur la stratégie d'authentification JWT, et arbitrage de la stack technique complète. Séance longue et dense, structurante pour tout le reste du projet.
