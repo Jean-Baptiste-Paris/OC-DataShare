@@ -301,6 +301,76 @@ Binômage piloté avec posture sous-décision par sous-décision sur les structu
 
 ---
 
+## Séance 10 — 2026-05-09 (suite, même jour)
+
+**Contexte :** finalisation de l'étape 3 OC avec l'US04 (connexion) en full-stack. Côté back : la majorité du travail est de la configuration Symfony Security + Lexik, peu de code applicatif (point déjà anticipé par le user en séance 7). Côté front : enrichissement du domaine auth (login + me + persist), rebascule de la `LoginPage` placeholder en formulaire complet, création d'un `UploadPage` placeholder (cible de redirection post-login choisie par le user, en attendant US01), bootstrap d'authentification au mount d'`App`. Spec E2E Cypress côté login avec un parcours bout-en-bout complet (création → flash → connexion → /upload). Diagnostic et correction d'un bug JWT (passphrase non chargée en `APP_ENV=test`).
+
+### Posture adoptée
+Binômage piloté avec posture sous-décision par sous-décision sur les choix structurants (4 questionnaires en début de plan US04 : récupération identité, persistance, logout back, RequireAuth ; 2 sur formats Lexik). Pédagogie granulaire sur les concepts back nouveaux (json_login, providers Doctrine, custom AuthenticationSuccessHandler, access_control PUBLIC_ACCESS, KernelInterface check pour gating env=test) et sur le pattern persist Zustand.
+
+### Tâches confiées
+- **Audit de l'existant** : composer.json (Lexik bundle déjà installé séance 6), security.yaml (config par défaut Symfony), routes/security.yaml (logout par défaut), keypair JWT (générée séance 6 mais avec passphrase default).
+- **US04-back-1 + 2 — Configuration Symfony Security** :
+  - `security.yaml` : provider Doctrine sur `User.email`, firewall `dev` (inchangé), firewall `login` (`pattern: ^/api/auth/login$`, stateless, `json_login` Lexik avec `username_path: email`), firewall `api` (`pattern: ^/api`, stateless, `jwt: ~`), access_control PUBLIC_ACCESS sur `/api/auth/(login|register)` et `/test/`, ROLE_USER catch-all sur `/api`.
+  - `routes/security.yaml` : route `api_login_check` (`POST /api/auth/login`).
+  - `lexik_jwt_authentication.yaml` : `token_ttl: 28800` (8h, ADR 0002 D1).
+  - `App\Security\JsonAuthenticationSuccessHandler` (~30 lignes) qui implémente `AuthenticationSuccessHandlerInterface` et wrap la réponse Lexik dans l'enveloppe `{ data: { token } }` pour cohérence avec `/register`.
+  - Failure handler Lexik conservé (`{ code, message }`) — délibérément pas en RFC 7807, pour conserver le format opaque "Invalid credentials." identique pour mauvais mdp et user inconnu (anti-énumération).
+- **US04-back-3 — Endpoint `/api/auth/me`** : ajout d'une route `GET /api/auth/me` à `AuthController` qui retourne `{ data: UserResponse }` du user authentifié via `getUser()`. Permet au front de rehydrater l'identité au reload sans décoder le JWT.
+- **US04-back-4 — Tests fonctionnels** : `AuthControllerLoginTest` (3 tests : 200 + token, 401 mauvais mdp, 401 user inconnu avec assertion message identique → anti-énumération validée test), `AuthControllerMeTest` (3 tests : 200 avec token créé via `JWTTokenManagerInterface`, 401 sans token, 401 token invalide). 31 tests PHPUnit verts.
+- **US04-front-1 — Intercepteur axios `request`** : `apiClient.interceptors.request.use` qui injecte `Authorization: Bearer <token>` (token lu via `useAuthStore.getState().token` dans la closure, pas au top-level → pas de cycle d'import problématique).
+- **US04-front-2 — Domaine auth enrichi (refactoring + extensions)** :
+  - `types/auth.ts` : `LoginPayload`, `LoginError` union (`invalid-credentials` | `network`), garde `isLoginError`.
+  - `services/authService.ts` : ajout `login()` et `me()`, factorisation `EnvelopedResponse<T>`, `mapLoginError` isolé.
+  - `validation/authValidation.ts` : ajout `validateLoginForm` (règles minimales : email présent + format, password présent ; pas de `minLength` côté client — autorité serveur, "le client n'a pas à connaître la politique mdp").
+  - `stores/authStore.ts` : refonte avec `zustand/middleware persist` (`partialize: { token, user }`, `name: 'datashare-auth'`), nouveaux états (`token`, `user`, `loginStatus`, `loginError`), nouvelles actions (`login`, `bootstrap`, `logout`, `resetLogin`), renames pour distinguer (`status` → `registerStatus`, `error` → `registerError`, `reset` → `resetRegister`).
+  - Adaptation `RegisterPage` et son test aux renames du store.
+- **US04-front-3 — Pages** :
+  - `LoginPage` : remplace le placeholder, formulaire complet, redirige vers `/upload` après login OK ; conserve l'affichage du flash success quand on arrive depuis `/register` ; redirection immédiate vers `/upload` si déjà authentifié au mount (évite d'afficher le form pour rien).
+  - `UploadPage` placeholder : Header avec bouton "Se déconnecter", affiche `Connecté en tant que <email>` (vérification visuelle du parcours complet bootstrap → /me → store).
+  - `App.tsx` : route `/upload` + `useEffect` qui appelle `bootstrap()` au mount.
+- **US04-front-4 — Header dynamique** : finalement réalisé par contexte de page (chaque page met le bon CTA dans le slot du Header), pas via un composant centralisé. Argument oral : "le Header ne sait pas où il est, c'est la page qui décide".
+- **US04-front-5 — Tests** :
+  - 17 nouveaux tests Vitest : authStore (8 nouveaux : login, bootstrap, logout), authService (5 nouveaux : login + me), validation (7 nouveaux : validateLoginForm + isLoginFormValid), LoginPage (5).
+  - Spec Cypress `login.cy.ts` : 3 scénarios OK (login user existant + redirect /upload, persist après reload + logout vide localStorage, parcours bout-en-bout register→flash→login→/upload), 2 scénarios KO 401 (mauvais mdp, user inconnu avec assertion message identique).
+- **Itérations visuelles wording** : harmonisation des CTA inter-pages ("Se connecter" → "Connexion" sur Header Register, "J'ai déjà un compte" → "Connexion" sur form Register, "Pas encore de compte ?" → "Créer un compte" sur form Login). Doublon volontaire Header/form (cohérence UX). Tests adaptés via `getAllByRole + toHaveLength(2)`.
+- **5 commits** structurés : back JWT + /me, journal séance 9, auth domain extension, pages, Cypress login spec.
+
+### Supervision et corrections
+- **Diagnostic JWT passphrase incorrect** : au premier smoke test, `POST /api/auth/login` renvoyait 500 "An error occurred while trying to encode the JWT token". Investigation en deux temps : (1) check de la chaîne de chargement `.env` Symfony (en `APP_ENV=test`, `.env.local` n'est pas lu) ; (2) check OpenSSL pour voir avec quelle passphrase la clé privée déchiffre. Trouvé : la clé privée est chiffrée avec la passphrase default `changeme_generate_strong_passphrase` (pas `bf39c8b3085e...` qui était dans `.env`). Le user a probablement généré la keypair séance 6 avec la default. Correction immédiate : ajout de `JWT_PASSPHRASE=changeme_generate_strong_passphrase` dans `.env.test.local`. Dette explicite tracée : régénérer la keypair avec une vraie passphrase et aligner les `.env.*.local`.
+- **Décision "RequireAuth repoussé à US05"** : le copilote recommandait inclure RequireAuth dans US04 (~15 lignes pour préparer US05+). Le user a tranché report à US05. Acté, plus minimal pour le scope US04.
+- **Décision "/me dédié vs JWT décodé front vs login renvoie user"** : le copilote a présenté les 3 options avec recommandation /me. Le user a validé. Argument oral : SRP (login auth, /me identifie), source unique de vérité, robuste si payload JWT évolue.
+- **Décision "redirect par défaut page de téléversement" par le user** (réponse hors options) : le copilote proposait `/` (HomePage actuelle) ou `from` location.state. Le user a explicitement choisi `/upload`. Conséquence : création d'un placeholder `UploadPage` (cohérent avec le pattern LoginPage placeholder de l'US03 front).
+- **Décision "format Lexik default { code, message } pour 401"** : le copilote proposait soit Lexik default soit RFC 7807 custom. Le user a choisi Lexik default — argument zéro code custom + format opaque conserve l'anti-énumération naturellement.
+- **Recadrage diagnostic du 404 réseau (issue de la séance 9)** : le copilote a au début diagnostiqué "Symfony pas lancé" sur le 404 Cypress, mais c'était un container Docker qui répondait sur le port 8000. Corrigé par le user. Apprentissage à généraliser : sur un 404 réseau, regarder le `Server:` header de la réponse (qui aurait montré WSGIServer immédiatement) avant d'hypothèser.
+- **Renames `status` → `registerStatus` / `error` → `registerError` / `reset` → `resetRegister`** : le copilote a hésité entre garder les noms courts pour limiter le churn ou renommer pour cohérence quand login s'ajoute. Choix renaming → plus défendable à l'oral (deux statuts génériques `status` seraient ambigus quand login arrivera dans une autre page). Refactoring touchant RegisterPage + tests + store.
+- **Décision passphrase test** : pragmatique, on accepte la default dans `.env.test.local` pour réparer le test E2E maintenant ; régénération propre tracée comme dette à clore avant production.
+- **Wording CTA harmonisé** : itération en deux temps (le user a d'abord demandé "boutons deviennent 'Créer un compte' et 'Connexion'" pour les liens borderless, puis a précisé "le Header reste 'Se connecter'" → correction). Le copilote a appliqué ligne par ligne, mais aurait pu proposer d'emblée d'unifier Header + form.
+
+### Apports et limites constatés
+- **Apport — Configuration Symfony Security en une passe** : avec un audit propre des fichiers existants (composer.json, lexik config, security.yaml par défaut, route _security_logout déjà présente), la configuration Lexik + JWT s'est faite en un seul refactor de `security.yaml` + 1 fichier custom + 2 lignes de routes. Argument oral solide : "infrastructure auth = config + 30 lignes de code custom, le reste est délégué à la lib".
+- **Apport — Anti-énumération validée bout-en-bout** : l'assertion `message identique pour mauvais mdp et user inconnu` est testée à 3 niveaux (PHPUnit functional, Vitest service mapping, Cypress E2E). Point oral fort : "trade-off MVP assumé sur /register (409 explicite, mitigations V2 documentées) MAIS sécurité préservée sur /login".
+- **Apport — Parcours E2E bout-en-bout en un seul `it`** : `register → flash success → login → /upload` enchaîné, sans seed cy.request, juste de l'UI. Démonstration que tous les morceaux (validation, services, store, persist, navigation) sont câblés et fonctionnent ensemble.
+- **Apport — Persist Zustand + bootstrap = robustesse au reload** : la combinaison `persist` (sauve token + user) + `bootstrap` (re-vérifie /me au mount, logout silencieux si 401) couvre proprement les 3 cas (boot sans session, boot avec session valide, boot avec token expiré). Pattern défendable à l'oral comme "robuste par design, l'utilisateur ne reste jamais dans un état fantôme".
+- **Apport — Custom handler Lexik documenté en code** : le `JsonAuthenticationSuccessHandler` montre concrètement comment décorer la lib pour respecter le contrat applicatif sans la combattre. ~15 lignes, très défendable.
+- **Limite — Diagnostic JWT 500 trop linéaire** : le copilote a d'abord proposé de mettre la "vraie" passphrase de `.env` dans `.env.test.local`, alors que c'était l'inverse (la "vraie" passphrase ne déchiffrait pas la clé). N'a re-vérifié avec OpenSSL qu'après que le smoke test ait échoué une seconde fois. Mécanisme à généraliser : sur un échec crypto/auth, vérifier directement avec un outil bas niveau (openssl, php -r) avant de modifier la config.
+- **Limite — Wording CTA non anticipé** : le copilote a écrit des labels descriptifs longs au premier jet ("J'ai déjà un compte", "Pas encore de compte ?") sans vérifier la maquette pour des CTA plus courts. Le user a corrigé en deux temps. À l'avenir : sur des labels visibles, demander d'emblée "courts/longs" en sous-décision.
+- **Limite — Renaming non détecté en amont** : le copilote a écrit le store enrichi avec les renames sans signaler que les tests RegisterPage allaient casser sur `useAuthStore.getState().reset()`. Vitest a révélé la régression. Bénin (1 fichier, 5 lignes), mais aurait pu être anticipé par un grep `\.reset\(\)` avant d'écrire la nouvelle version.
+
+### Dettes ouvertes en fin de séance
+- **JWT passphrase à régénérer** : keypair Lexik avec une vraie passphrase, synchronisée `.env.local` + `.env.test.local`. À tracer dans `SECURITY.md`.
+- **ADR 0005 D3** : DS = 7 composants (Footer ajouté), pas 6.
+- **`docs/maquettes/NOTES.md`** : mentionner Footer.
+- **README global du DS** (D5 ADR 0005).
+- **`SECURITY.md`** ébauche.
+- **`TESTING.md`** ébauche.
+- **`PERF.md`** + **`MAINTENANCE.md`** ébauches.
+- **Proxy `/api`** dans `vite.config.ts` : inutilisé.
+- **RequireAuth** : à introduire en US05 (routing privé pour l'espace personnel).
+- **Étape 3 OC officiellement achevée** : prêt pour étape suivante (US01/US02/US05/US06).
+
+---
+
 ## Séance 4 — 2026-04-25
 
 **Contexte :** reprise après plusieurs jours d'interruption. Passe d'arbitrage des 5 ambiguïtés restantes, rédaction d'un ADR détaillé sur la stratégie d'authentification JWT, et arbitrage de la stack technique complète. Séance longue et dense, structurante pour tout le reste du projet.
