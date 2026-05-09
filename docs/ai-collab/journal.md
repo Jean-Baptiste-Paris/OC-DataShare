@@ -197,6 +197,51 @@ Démarrage en posture **junior à briefer** (le copilote propose, le user valide
 
 ---
 
+## Séance 8 — 2026-05-09
+
+**Contexte :** séance dense de mise en place du design system front, démarrage effectif de l'étape 3 OC côté UI. Résolution préalable de la dette « coverage back PCOV », rédaction d'un ADR de stack DS, pipettage de la palette à partir des PNG maquette, et construction des 6 composants UI dans la même session.
+
+### Posture adoptée
+Binômage piloté avec pédagogie granulaire renforcée. Posture sous-décision par sous-décision exigée explicitement sur l'ADR 0005 (rappel de la règle `feedback_validation_par_sous_decision.md`). Plusieurs recadrages en cours de séance vers une explication moins jargonneuse (« j'ai rien compris à Radix », « API ? »).
+
+### Tâches confiées
+- **Déblocage dette PCOV** (séance 7) : pipeline `brew install pcre2` + `CPPFLAGS=-I/opt/homebrew/include pecl install pcov` + création manuelle du dossier `/opt/homebrew/lib/php/pecl/20250925`. Coverage 100 % du périmètre US03 (4 classes, 17 méthodes, 45 lignes).
+- **Rédaction de l'ADR 0005 — Stack et architecture DS** (~330 lignes, 6 sous-décisions D1-D6 : styling CSS Modules, Radix sur Switch+Select, périmètre 6 composants, structure folder-per-component avec alias `@/`, doc minimale README global + TSDoc, tests de contrat 1-3/composant, section « préparation à l'oral »).
+- **Pipettage de la palette maquette par le user** (~14 valeurs hex : primary, gradient, noirs sémantiques, callouts × 3 triplets, inputs, boutons × 4 variants), consolidation et rationalisation des tokens dans `front/src/styles/theme.css`.
+- **Setup front** : alias `@/` (Vite + tsconfig), création des dossiers `styles/`, `components/ui/`, `features/`, `pages/`, install `@radix-ui/react-toggle-group`, `@radix-ui/react-select`, `@fontsource/dm-sans`, `lucide-react`. Réécriture `index.css`, `App.tsx` (router shell), `main.tsx` (BrowserRouter + ordre d'imports critique).
+- **Construction des 6 composants UI** : Button (4 variants), Input (label/helper/error + a11y `aria-describedby`), Header (responsive `@media` + `@container`), Callout (3 variants + Lucide icons), Switch (Radix toggle-group, pill segmenté), Select (Radix select complet, portal). 18 tests Vitest verts, TSDoc sur les props, gabarit folder-per-component appliqué.
+- **Page `/design-system`** : route dédiée avec rendu vivant de chaque composant, exemples par variant et état. Container queries pour la preview mobile du Header sans redimensionnement.
+
+### Supervision et corrections
+- **Recadrage jargon copilote** (3 occurrences) : « API » utilisé pour interface composant (recadré → « contrat / props »), « Radix headless » pas explicité (recadré → exemple concret du Switch a11y), confusion Zustand/Radix anticipée par le user (recadré sur la distinction état applicatif vs comportement composant local).
+- **Recadrage rythme** : sur le setup alias `@/` (« explications ? »). Le copilote allait trop vite sur la plomberie. Reprise pédagogique avec décomposition.
+- **Bug d'inattention** : icône erreur du Callout en `width="16"` alors que les autres étaient à `width="12"` (faute de frappe dans une édition antérieure). Le user a noté la différence visuelle persistante après plusieurs ajustements de SVG. Solution : passage à Lucide React (icônes uniformes par construction), élimination de la classe d'erreur.
+- **Arbitrage palette par le user** : promotion de `#E27F29` au rang de `--color-primary` était discutable (argument « occurrences boutons » plutôt que « brand color »). Le user a re-pipetté `#E77A6E` sur le Switch sélectionné, révélant l'erreur de hiérarchie sémantique. Compromis acté : `--color-primary: #E27F29` (interactif global), `--color-corail: #E77A6E` (Switch sélectionné uniquement).
+- **Itérations visuelles cadrées** : letter-spacing DM Sans (3 itérations -0.01 / -0.015 / -0.02), taille logo Header (×2), Switch (warning border / has() corail / 3-pills / retour pill unifié warning), tokens border (alias / unset / warning).
+- **Conformité WCAG assumée** : `#FFF` sur `#E77A6E` du Switch sélectionné (ratio 2,92 < 4,5:1 AA). Le user a choisi de garder la maquette et documenter l'écart dans `TESTING.md` plutôt que dévier visuellement.
+
+### Apports et limites constatés
+- **Apport — DS complet en une séance** : 6 composants, 18 tests verts, TSDoc, page DS vivante. Le gabarit folder-per-component (Button) a permis de répliquer rapidement sur les 5 suivants.
+- **Apport — Pipettage rigoureux par le user** : palette extraite valeur par valeur, identification des inconsistances de la maquette (3 noirs distincts, 5 corails), rationalisation explicite avec arbitrages tracés. Argument oral solide : « le DS est plus cohérent que la maquette source, par décisions explicites ».
+- **Apport — CSS moderne défendable à l'oral** : `@container` queries pour la preview mobile, `:has()` pour l'état actif, CSS Modules + custom properties. Tous standards supportés en 2026, pas d'expérimental.
+- **Apport — Radix utilisé chirurgicalement** : uniquement Switch et Select (composants à fort enjeu a11y), pas de surface inutile. Argument oral : « j'ai délégué le bas niveau a11y à une lib éprouvée pour me concentrer sur l'archi du DS ».
+- **Apport — Lucide React vs SVG bespoke** : démontre l'application de SOLID au choix d'outillage (les icônes héritent de la même `size` par construction, élimine la classe de bugs de copier-coller).
+- **Limite — Sur-jargon récurrent** : « API », « headless », « stratégie », « token » utilisés sans définir, recadré par le user. Symptôme persistant : poser le vocabulaire avant de l'utiliser.
+- **Limite — Biais d'aller trop vite sur la plomberie** : setup alias passé en mode automatique sans expliquer. Le user a refusé l'edit, rappel utile sur la posture pédagogique granulaire.
+- **Limite — Inertie sur la promotion de tokens** : `--color-primary` promu sur l'argument « occurrences » sans considérer la hiérarchie sémantique brand-vs-action. Erreur révélée seulement quand le user a re-pipetté la couleur d'origine sur un autre composant.
+- **Limite — Bug copier-coller SVG** : trois passes successives sur la taille du X de l'icône erreur sans détecter qu'un attribut `width="16"` traînait. Le passage à Lucide a éliminé le bug structurellement.
+
+### Dettes ouvertes en fin de séance
+- **ADR 0004** (pas d'auto-login sur `/auth/register`) toujours non rédigé.
+- **`TESTING.md` ébauche** : pyramide back actuelle (25 tests, 100 % coverage US03), pyramide front (18 tests Vitest), procédure d'install PCOV documentée, **non-conformité WCAG AA assumée sur le Switch sélectionné** à tracer.
+- **`SECURITY.md` ébauche** : politique mdp, JWT, anti-énumération `/login`, trade-off `/register` assumé.
+- **README global du DS** (D5 ADR 0005) : un seul fichier `front/src/components/ui/README.md` à écrire (catalogue 6 composants, conventions communes).
+- **Firewall `security.yaml`** : autoriser explicitement `/api/auth/*` en public (préparation US04).
+- **US04 back** : config Symfony Security + Lexik JWT, peu de code applicatif.
+- **US03 + US04 front** : pages Login et Register consommant les composants du DS.
+
+---
+
 ## Séance 4 — 2026-04-25
 
 **Contexte :** reprise après plusieurs jours d'interruption. Passe d'arbitrage des 5 ambiguïtés restantes, rédaction d'un ADR détaillé sur la stratégie d'authentification JWT, et arbitrage de la stack technique complète. Séance longue et dense, structurante pour tout le reste du projet.
