@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Header } from '@/components/ui/Header';
+import { Callout } from '@/components/ui/Callout';
 
 export function DesignSystemPage() {
   return (
@@ -109,7 +110,15 @@ export function DesignSystemPage() {
 
       <section style={{ marginTop: '2rem' }}>
         <h2>Callout</h2>
-        <p style={{ color: 'var(--color-text-muted)' }}>À venir.</p>
+        <p style={{ color: 'var(--color-text-muted)' }}>
+          Bandeaux d'information avec sémantique a11y (status/alert).
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+          <Callout variant="info">Vérifiez votre boîte mail pour activer votre compte</Callout>
+          <Callout variant="warning">Le lien expirera dans 7 jours</Callout>
+          <Callout variant="error">Email ou mot de passe incorrect</Callout>
+        </div>
       </section>
 
       <section style={{ marginTop: '2rem' }}>
