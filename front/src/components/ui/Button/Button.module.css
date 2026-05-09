@@ -1,0 +1,75 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-tight);
+  letter-spacing: inherit;
+
+  padding: var(--space-sm) var(--space-lg);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+
+  transition: box-shadow 150ms ease, opacity 150ms ease;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  color: var(--color-text-muted);
+  border-color: var(--color-text-muted);
+}
+
+/* === Hover : ombre subtile (pas de changement de couleur, validé en DS) === */
+.button:not(:disabled):hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* === Variant primary === */
+.primary {
+  background: var(--color-button-primary-bg);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.primary:disabled {
+  background: var(--color-bg-muted);
+}
+
+/* === Variant secondary === */
+.secondary {
+  background: transparent;
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* === Variant borderless (ghost) === */
+.borderless {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-primary);
+}
+.borderless:not(:disabled):hover {
+  /* Pas d'ombre sur un bouton sans bord — survol neutre */
+  box-shadow: none;
+  opacity: 0.7;
+}
+.borderless:disabled {
+  /* Pas de fond ni de bord en disabled — uniquement texte muted */
+  background: transparent;
+  border-color: transparent;
+}
+
+/* === Variant action (CTA sombre) === */
+.action {
+  background: var(--color-action);
+  border-color: var(--color-action);
+  color: var(--color-text-on-dark);
+}
+.action:disabled {
+  background: var(--color-bg-muted);
+  border-color: var(--color-bg-muted);   /* border invisible (même couleur que fill) */
+}

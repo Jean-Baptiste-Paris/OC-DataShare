@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/Button';
 
 export function DesignSystemPage() {
   return (
@@ -19,7 +20,25 @@ export function DesignSystemPage() {
 
       <section style={{ marginTop: '2rem' }}>
         <h2>Button</h2>
-        <p style={{ color: 'var(--color-text-muted)' }}>À venir.</p>
+        <p style={{ color: 'var(--color-text-muted)' }}>
+          4 variants : primary, secondary, borderless, action.
+        </p>
+
+        <h3 style={{ marginTop: '1rem', fontSize: 'var(--font-size-base)' }}>État normal</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+          <Button variant="primary">Téléverser</Button>
+          <Button variant="secondary">Téléverser</Button>
+          <Button variant="borderless">Téléverser</Button>
+          <Button variant="action">Téléverser</Button>
+        </div>
+
+        <h3 style={{ marginTop: '1rem', fontSize: 'var(--font-size-base)' }}>État désactivé</h3>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem' }}>
+          <Button variant="primary" disabled>Téléverser</Button>
+          <Button variant="secondary" disabled>Téléverser</Button>
+          <Button variant="borderless" disabled>Téléverser</Button>
+          <Button variant="action" disabled>Téléverser</Button>
+        </div>
       </section>
 
       <section style={{ marginTop: '2rem' }}>
