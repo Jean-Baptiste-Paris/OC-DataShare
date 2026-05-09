@@ -242,6 +242,65 @@ Binômage piloté avec pédagogie granulaire renforcée. Posture sous-décision 
 
 ---
 
+## Séance 9 — 2026-05-09 (suite, même jour)
+
+**Contexte :** finalisation de l'US03 côté front, dans la foulée de la séance 8 (DS livré). Construction full-stack front de la pyramide auth : plomberie réseau → service mappant les erreurs HTTP → store Zustand → validation client → page Register + placeholder Login → routing → tests Vitest → smoke browser. Ajout d'un composant `Footer` au DS (7e composant, hors périmètre initial). Mise en place du pipeline E2E Cypress avec un endpoint test-only Symfony pour piloter la BDD test, et écriture de 5 scénarios KO. Rédaction de l'ADR 0004 (pas d'auto-login sur /register), dette héritée de la séance 7.
+
+### Posture adoptée
+Binômage piloté avec posture sous-décision par sous-décision sur les structuralités (organisation des fichiers, validation client, store, flow succès, infrastructure E2E). Pédagogie granulaire renforcée sur les concepts nouveaux (intercepteur axios vs YAGNI, union discriminée, mapping HTTP → erreurs typées, idiomatic Zustand action async, endpoint test-only). Validation systématique des sous-décisions avant code : 4 questionnaires structurés en début de plan, 1 en cours sur `baseURL` axios + intercepteur, 1 sur infrastructure E2E (B endpoint test-only + datashare_test).
+
+### Tâches confiées
+- **Rédaction ADR 0004** « Pas d'auto-login sur POST /auth/register » (~110 lignes) — formalise la décision prise séance 7 (SRP + extensibilité OCP), documente le trade-off anti-énumération assumé MVP, prépare 5 questions probables pour l'oral.
+- **Lot 1 — apiClient axios** : instance partagée, baseURL via env var, pas d'intercepteur (YAGNI strict, parsing par service).
+- **Lot 2 — Types et service auth** : `RegisterPayload`, `User`, `RegisterError` union discriminée à 3 variantes (`email-already-taken` / `validation` / `network`), garde `isRegisterError`, service `register()` qui mappe HTTP en throw d'erreurs typées.
+- **Lot 3 — Validation client** : règles miroir back (email format/254 chars, password ≥ 8) + confirm password client-only.
+- **Lot 4 — Store Zustand** : `authStore` avec `status` / `error` / `register()` / `reset()`, normalisation des erreurs non typées en `network`.
+- **Lot 5 — Pages** : `RegisterPage` (composition DS, branchement store, validation client, redirect /login + flash success via `location.state` RR7) et `LoginPage` placeholder (consomme le flash).
+- **Lot 6 — Routing** : ajout des routes `/register` et `/login` à `App.tsx`.
+- **Lot 7 — Tests Vitest** : 27 nouveaux tests (validation 11, service 5 incl. mapping 201/409/422/5xx, store 5 transitions, page 6 incl. flash success + 409 callout + 422 fieldErrors). Test du flash success via composant `LoginCapture` mock dans MemoryRouter (corrigé pour respecter purity rule via `useEffect`).
+- **Composant `Footer`** ajouté au DS (folder-per-component, test, TSDoc), masqué en mobile conformément à la maquette. Token `--container-max-width` (1280px) introduit dans `theme.css` et appliqué à Header + Footer.
+- **Itérations visuelles RegisterPage** (~10 micro-ajustements) : titre en gras, ordre actions, placeholders, regroupement des 2 boutons dans une `div` pour échapper au gap du form, padding card, taille card, taille logo Header, padding bloc, taille titre.
+- **Pipeline E2E Cypress** : install Cypress 15 + `@testing-library/cypress`, configuration (`cypress.config.ts`, `support/`, `tsconfig` isolé), exclusion `cypress/` du lint, scripts `e2e:open` / `e2e:run`.
+- **Endpoint test-only Symfony** `POST /test/users/reset` : `TestUsersController` qui throw `NotFoundHttpException` hors `APP_ENV=test`. Consommé par `cy.resetUsers()` (commande custom).
+- **Spec `register.cy.ts`** : 5 scénarios KO (4 validation client avec assertion `cy.intercept().as().all length 0`, 1 conflit 409 avec seed via `cy.request POST /api/auth/register`).
+- **Documentation** : `front/cypress/README.md` (pré-requis, périmètre, architecture).
+- **9 commits** propres sur main, organisés par cohérence sémantique (ADR / Footer+container / auth domain / pages+routing / endpoint back / Cypress setup).
+
+### Supervision et corrections
+- **Décision « plat sans regroupement métier » imposée par le user** : sur la question d'organisation des fichiers, le copilote proposait `features/` (convention React/TS répandue). Le user a tranché plat (`lib/`, `services/`, `stores/`, `validation/`, `types/`) sur l'argument « 3 domaines, pas la peine ». Acté avec posture defensive à l'oral préparée.
+- **Recadrage architectural sur Zustand** : le copilote recommandait `useState` local pour le formulaire register. Le user a corrigé en s'appuyant sur la décision actée séance 5 (schéma d'archi Store → Services HTTP). Reconnaissance explicite par le copilote que le user était architecturalement cohérent et que la reco initiale était paresseuse.
+- **Décision `VITE_API_URL` direct** : le copilote recommandait `'/api'` via proxy Vite (déjà configuré séance 6). Le user a choisi l'URL directe, ce qui rend le proxy inutilisé. Trade-off CORS noté, dette ouverte (clarifier ou retirer le proxy).
+- **Décision « pas d'intercepteur axios »** : le copilote recommandait un intercepteur RFC 7807 dans `apiClient` (DRY pour US suivantes). Le user a tranché YAGNI strict, parsing dans `authService`. Acté.
+- **Itérations visuelles guidées par le user** sur la `RegisterPage` (titre en gras, ordre des actions, placeholders, taille de carte, padding, taille de titre, taille de logo, footer en mobile) : le copilote a appliqué ligne par ligne, parfois en remontant la maquette pour confirmer un détail (lien → bouton borderless, position au-dessus du primary). Une itération a abouti à un revert (ajout puis retrait d'un `--font-size-4xl`, conservation YAGNI).
+- **Erreur de fonction de test** : le copilote a écrit dans `RegisterPage.test.tsx` une assignation à une variable externe pendant le render du composant `LoginCapture` — violation du principe de pureté React, détectée par ESLint `react-hooks/globals`. Corrigé via `useEffect`.
+- **Bug d'inattention résolu par le user** : message d'erreur Cypress « 404 Not Found » sur `/test/users/reset`, le copilote a diagnostiqué « Symfony pas lancé », le user a précisé qu'un container Docker tournait. Corrigé en stoppant le container, lancement du serveur Symfony en `APP_ENV=test`. Curl de validation `POST /test/users/reset` → 204.
+- **Choix du mécanisme de reset BDD E2E** : le copilote a présenté 3 options (cy.exec Doctrine, endpoint test-only, cy.task pg) avec recommandation B (endpoint test-only). Le user a validé et précisé `datashare_test` (vs `datashare` dev) — décision défendable à l'oral.
+- **Convention de tests Cypress / Vitest cohérente** : le copilote a installé `@testing-library/cypress` plutôt que d'utiliser des sélecteurs natifs Cypress. Argument oral : même API que les tests unitaires, cohérence pédagogique.
+
+### Apports et limites constatés
+- **Apport — Mapping HTTP en union discriminée** : le pattern `RegisterError = { kind: ... }` rend les branches d'erreur exhaustives au compilo. Argument oral solide pour démontrer du typage défensif au front. Le `switch (error.kind)` côté `RegisterPage` refuse de compiler si on oublie une branche.
+- **Apport — Pyramide de tests front complète** : 11 validation + 5 service + 5 store + 6 page + 5 E2E KO. Couvre les 4 niveaux (unit pur, unit avec mock axios, unit avec mock service, intégration page+store+service mocké, E2E full-stack). Argument oral prêt sur la stratégie de tests.
+- **Apport — Endpoint test-only avec garde explicite** : pattern lisible et défendable. Le `KernelInterface::getEnvironment()` check est plus direct qu'une condition de routing Symfony, plus accessible à l'oral pour un mentor non-Symfony.
+- **Apport — Cypress + RTL alignés** : `findByLabelText` et `findByRole` partagés entre Vitest et Cypress. Réduit la charge cognitive et démontre une architecture de tests cohérente.
+- **Apport — ADR 0004 rédigé en amont du code** : la dette de séance 7 a été écrasée juste avant d'écrire le flow de redirect, garantissant que le code reflète la décision actée et pas l'inverse.
+- **Limite — Reco architecturale paresseuse sur Zustand** : le copilote a oublié la décision archi de séance 5 (schéma Store → Services HTTP) en proposant useState local. C'est le user qui a remis le copilote dans le rail. Symptôme : le copilote ne consulte pas systématiquement les décisions archi déjà actées avant de proposer.
+- **Limite — Validation des décisions de structure non systématique** : sur le choix « features vs plat », le copilote a recommandé features sans présenter la palette complète d'options (modules, domains, plat) — c'est le user qui a contesté la formulation, déclenchant une question à choix multiples a posteriori. Symptôme : présenter d'emblée 3-4 options sur les questions structurantes plutôt qu'une reco unique.
+- **Limite — Itérations visuelles sans rationalisation** : les ~10 micro-ajustements visuels ont été acceptés un par un sans proposition de batch. Coût d'aller-retour pour le user. Mécanisme à creuser : proposer dès la 2e ou 3e itération une vue d'ensemble (« on revoit l'échelle complète ? ») plutôt que continuer l'itération unitaire.
+- **Limite — Diagnostic incomplet sur le 404 Cypress** : le copilote a diagnostiqué « Symfony pas lancé » mais n'a pas anticipé qu'un autre service pouvait occuper le port (Docker dans ce cas). C'est le user qui a apporté l'info manquante. Mécanisme à généraliser : sur un 404 réseau, proposer de checker `lsof -i :8000` ou de regarder le `Server:` header de la 404 (qui aurait montré WSGIServer immédiatement).
+
+### Dettes ouvertes en fin de séance
+- **US04 (login)** back + front : prochaine étape immédiate.
+- **ADR 0005 D3** à mettre à jour : le DS passe de 6 à 7 composants (`Footer` ajouté).
+- **`docs/maquettes/NOTES.md`** : mentionner le `Footer` comme composant DS livré.
+- **README global du DS** (D5 ADR 0005) : reste à écrire (catalogue 7 composants).
+- **Proxy `/api`** dans `vite.config.ts` : inutilisé depuis qu'on appelle directement `VITE_API_URL`. Soit retirer, soit clarifier en commentaire.
+- **`SECURITY.md`** ébauche : mots de passe, JWT, anti-énumération `/login`, trade-off `/register`, XSS (D3 ADR 0002).
+- **`TESTING.md`** ébauche : pyramide actuelle (back 25 + front 47 + E2E 5), procédure d'install PCOV, dette de couverture, écart WCAG AA Switch.
+- **Firewall `security.yaml`** à durcir : autoriser explicitement `/api/auth/*` en public (préparation US04).
+- **Scénarios E2E OK** (création + connexion + arrivée espace) : à ajouter post-US04.
+
+---
+
 ## Séance 4 — 2026-04-25
 
 **Contexte :** reprise après plusieurs jours d'interruption. Passe d'arbitrage des 5 ambiguïtés restantes, rédaction d'un ADR détaillé sur la stratégie d'authentification JWT, et arbitrage de la stack technique complète. Séance longue et dense, structurante pour tout le reste du projet.
