@@ -1,10 +1,14 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Header } from '@/components/ui/Header';
 import { Callout } from '@/components/ui/Callout';
+import { Switch } from '@/components/ui/Switch';
 
 export function DesignSystemPage() {
+  const [filter, setFilter] = useState('all');
+
   return (
     <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
       <p>
@@ -123,7 +127,24 @@ export function DesignSystemPage() {
 
       <section style={{ marginTop: '2rem' }}>
         <h2>Switch</h2>
-        <p style={{ color: 'var(--color-text-muted)' }}>À venir.</p>
+        <p style={{ color: 'var(--color-text-muted)' }}>
+          Segmented control (toggle group avec sélection exclusive). Implémentation Radix.
+        </p>
+
+        <Switch
+          options={[
+            { value: 'all', label: 'Tous' },
+            { value: 'available', label: 'Actifs' },
+            { value: 'deleted', label: 'Supprimés' },
+          ]}
+          value={filter}
+          onValueChange={setFilter}
+          ariaLabel="Filtre des fichiers"
+        />
+
+        <p style={{ marginTop: '0.5rem', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+          Valeur courante : <code>{filter}</code>
+        </p>
       </section>
 
       <section style={{ marginTop: '2rem' }}>

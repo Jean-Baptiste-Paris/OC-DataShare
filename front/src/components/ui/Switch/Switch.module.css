@@ -1,0 +1,39 @@
+.root {
+  display: inline-flex;
+  align-items: stretch;
+  gap: 0;
+  border: 1px solid var(--color-warning-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-button-primary-bg);
+  overflow: hidden;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  letter-spacing: inherit;
+
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--color-text);
+  cursor: pointer;
+
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.item[data-state='on'] {
+  background: var(--color-corail);
+  color: #fff;
+}
+
+.item:disabled {
+  cursor: not-allowed;
+  color: var(--color-text-muted);
+}
