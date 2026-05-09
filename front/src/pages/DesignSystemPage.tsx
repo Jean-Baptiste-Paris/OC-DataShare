@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 export function DesignSystemPage() {
   return (
@@ -43,7 +44,25 @@ export function DesignSystemPage() {
 
       <section style={{ marginTop: '2rem' }}>
         <h2>Input</h2>
-        <p style={{ color: 'var(--color-text-muted)' }}>À venir.</p>
+        <p style={{ color: 'var(--color-text-muted)' }}>
+          Champ texte avec label, helper text et état d'erreur.
+        </p>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '320px' }}>
+          <Input label="Email" type="email" placeholder="vous@exemple.fr" />
+          <Input
+            label="Mot de passe"
+            type="password"
+            helperText="8 caractères minimum"
+          />
+          <Input
+            label="Email"
+            type="email"
+            defaultValue="invalide"
+            error="Cet email est déjà utilisé"
+          />
+          <Input label="Champ désactivé" disabled defaultValue="Lecture seule" />
+        </div>
       </section>
 
       <section style={{ marginTop: '2rem' }}>
