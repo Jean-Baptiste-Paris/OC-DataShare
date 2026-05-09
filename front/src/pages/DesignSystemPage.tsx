@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Header } from '@/components/ui/Header';
 
 export function DesignSystemPage() {
   return (
@@ -67,7 +68,43 @@ export function DesignSystemPage() {
 
       <section style={{ marginTop: '2rem' }}>
         <h2>Header</h2>
-        <p style={{ color: 'var(--color-text-muted)' }}>À venir.</p>
+        <p style={{ color: 'var(--color-text-muted)' }}>
+          Logo à gauche, slot CTA à droite. Le state d'auth est porté par la page consommatrice.
+          Responsive via <code>@media</code> (viewport &lt; 768px) et <code>@container</code> (preview ci-dessous).
+        </p>
+
+        <h3 style={{ marginTop: '1rem', fontSize: 'var(--font-size-base)' }}>Desktop — sans CTA</h3>
+        <div style={{ border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+          <Header />
+        </div>
+
+        <h3 style={{ marginTop: '1rem', fontSize: 'var(--font-size-base)' }}>Desktop — « Se connecter »</h3>
+        <div style={{ border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+          <Header>
+            <Button variant="action">Se connecter</Button>
+          </Header>
+        </div>
+
+        <h3 style={{ marginTop: '1rem', fontSize: 'var(--font-size-base)' }}>Desktop — « Mon espace »</h3>
+        <div style={{ border: '1px dashed var(--color-border)', borderRadius: 'var(--radius-md)' }}>
+          <Header>
+            <Button variant="action">Mon espace</Button>
+          </Header>
+        </div>
+
+        <h3 style={{ marginTop: '1rem', fontSize: 'var(--font-size-base)' }}>Mobile — preview via <code>@container</code></h3>
+        <div
+          style={{
+            containerType: 'inline-size',
+            maxWidth: '375px',
+            border: '1px dashed var(--color-border)',
+            borderRadius: 'var(--radius-md)',
+          }}
+        >
+          <Header>
+            <Button variant="action">Se connecter</Button>
+          </Header>
+        </div>
       </section>
 
       <section style={{ marginTop: '2rem' }}>
