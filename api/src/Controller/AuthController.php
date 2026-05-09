@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Dto\RegisterRequest;
 use App\Dto\UserResponse;
+use App\Entity\User;
 use App\Exception\EmailAlreadyExistsException;
 use App\Service\UserRegistrationService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -45,5 +46,14 @@ class AuthController extends AbstractController
             ['data' => UserResponse::fromUser($user)],
             status: 201,
         );
+    }
+
+    #[Route('/me', name: 'me', methods: ['GET'])]
+    public function me(): JsonResponse
+    {
+        /** @var User $user */
+        $user = $this->getUser();
+
+        return $this->json(['data' => UserResponse::fromUser($user)]);
     }
 }
