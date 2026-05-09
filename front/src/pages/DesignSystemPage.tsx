@@ -5,9 +5,11 @@ import { Input } from '@/components/ui/Input';
 import { Header } from '@/components/ui/Header';
 import { Callout } from '@/components/ui/Callout';
 import { Switch } from '@/components/ui/Switch';
+import { Select } from '@/components/ui/Select';
 
 export function DesignSystemPage() {
   const [filter, setFilter] = useState('all');
+  const [expiration, setExpiration] = useState('1d');
 
   return (
     <main style={{ padding: '2rem', maxWidth: '900px', margin: '0 auto' }}>
@@ -149,7 +151,24 @@ export function DesignSystemPage() {
 
       <section style={{ marginTop: '2rem' }}>
         <h2>Select</h2>
-        <p style={{ color: 'var(--color-text-muted)' }}>À venir.</p>
+        <p style={{ color: 'var(--color-text-muted)' }}>
+          Dropdown de sélection. Implémentation Radix (a11y clavier complète, portail).
+        </p>
+
+        <Select
+          label="Expiration"
+          options={[
+            { value: '1d', label: 'Une journée' },
+            { value: '7d', label: 'Une semaine' },
+            { value: '30d', label: 'Un mois' },
+          ]}
+          value={expiration}
+          onValueChange={setExpiration}
+        />
+
+        <p style={{ marginTop: '0.5rem', fontSize: 'var(--font-size-xs)', color: 'var(--color-text-muted)' }}>
+          Valeur courante : <code>{expiration}</code>
+        </p>
       </section>
     </main>
   );

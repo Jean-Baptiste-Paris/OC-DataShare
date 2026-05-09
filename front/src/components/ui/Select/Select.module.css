@@ -1,0 +1,101 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text);
+}
+
+/* === Trigger : bouton qui ressemble à un input === */
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+
+  font-family: inherit;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-regular);
+  letter-spacing: inherit;
+  color: var(--color-text);
+
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+  min-width: 200px;
+
+  transition: border-color 150ms ease;
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+  background: var(--color-bg-muted);
+  color: var(--color-text-muted);
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--color-text-muted);
+  transition: transform 150ms ease;
+}
+
+.trigger[data-state='open'] .icon {
+  transform: rotate(180deg);
+}
+
+/* === Content : menu déroulant === */
+.content {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  z-index: 50;
+
+  /* Largeur égale au trigger via Radix CSS variable */
+  min-width: var(--radix-select-trigger-width);
+  max-height: var(--radix-select-content-available-height);
+  overflow: hidden;
+}
+
+.viewport {
+  padding: var(--space-xs);
+}
+
+/* === Item : option du dropdown === */
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  letter-spacing: inherit;
+  color: var(--color-text);
+
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--color-button-primary-bg);
+  color: var(--color-primary);
+}
+
+.item[data-state='checked'] {
+  font-weight: var(--font-weight-medium);
+}
+
+.indicator {
+  display: inline-flex;
+  color: var(--color-primary);
+}
