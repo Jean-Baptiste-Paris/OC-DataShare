@@ -52,3 +52,7 @@ services:
             $maxBytes: '%app.upload.max_size_bytes%'
         tags:
             - { name: kernel.event_listener, event: kernel.request, method: __invoke, priority: 256 }
+
+    App\Controller\Test\TestFilesController:
+        arguments:
+            $storagePath: '%env(resolve:STORAGE_PATH)%'

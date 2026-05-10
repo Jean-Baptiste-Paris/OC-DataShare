@@ -7,6 +7,12 @@ declare global {
        * POST /test/users/reset (chargé uniquement quand APP_ENV=test).
        */
       resetUsers(): Chainable<void>;
+
+      /**
+       * Vide la table files et le dossier de stockage test côté back via
+       * POST /test/files/reset (chargé uniquement quand APP_ENV=test).
+       */
+      resetFiles(): Chainable<void>;
     }
   }
 }
@@ -14,6 +20,11 @@ declare global {
 Cypress.Commands.add('resetUsers', () => {
   const apiUrl = Cypress.env('apiUrl');
   cy.request('POST', `${apiUrl}/test/users/reset`);
+});
+
+Cypress.Commands.add('resetFiles', () => {
+  const apiUrl = Cypress.env('apiUrl');
+  cy.request('POST', `${apiUrl}/test/files/reset`);
 });
 
 export {};
