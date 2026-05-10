@@ -7,6 +7,19 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.upload.blacklisted_extensions:
+        - exe
+        - bat
+        - cmd
+        - com
+        - scr
+        - msi
+        - ps1
+        - vbs
+        - vbe
+        - wsf
+        - wsh
+        - jar
 
 services:
     # default configuration for services in *this* file
@@ -28,3 +41,7 @@ services:
     App\Service\Storage\LocalStorageAdapter:
         arguments:
             $rootPath: '%env(resolve:STORAGE_PATH)%'
+
+    App\Service\Upload\FileValidator:
+        arguments:
+            $blacklistedExtensions: '%app.upload.blacklisted_extensions%'
