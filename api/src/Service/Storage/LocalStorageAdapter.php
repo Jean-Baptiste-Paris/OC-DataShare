@@ -35,4 +35,20 @@ class LocalStorageAdapter implements StorageInterface
             fclose($dest);
         }
     }
+
+    public function openReadStream(string $key)
+    {
+        $absolutePath = $this->rootPath . '/' . $key;
+
+        if (!is_file($absolutePath)) {
+            throw new StorageObjectNotFoundException(sprintf('No stored object for key "%s".', $key));
+        }
+
+        $handle = fopen($absolutePath, 'rb');
+        if ($handle === false) {
+            throw new RuntimeException(sprintf('Cannot open "%s" for reading.', $absolutePath));
+        }
+
+        return $handle;
+    }
 }

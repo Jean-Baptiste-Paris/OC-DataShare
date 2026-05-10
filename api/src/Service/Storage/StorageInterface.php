@@ -12,4 +12,12 @@ interface StorageInterface
      * @param resource $source readable stream
      */
     public function store($source, string $key): void;
+
+    /**
+     * Open a readable stream on the bytes previously stored at $key.
+     *
+     * @return resource readable stream — caller is responsible for fclose().
+     * @throws StorageObjectNotFoundException when no object exists for $key
+     */
+    public function openReadStream(string $key);
 }

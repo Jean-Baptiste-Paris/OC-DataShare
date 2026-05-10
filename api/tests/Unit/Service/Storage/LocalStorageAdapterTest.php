@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Unit\Service\Storage;
 
 use App\Service\Storage\LocalStorageAdapter;
+use App\Service\Storage\StorageObjectNotFoundException;
 use PHPUnit\Framework\TestCase;
 
 final class LocalStorageAdapterTest extends TestCase
@@ -67,6 +68,32 @@ final class LocalStorageAdapterTest extends TestCase
         fclose($source);
 
         self::assertSame($expectedHash, hash_file('sha256', $this->tmpDir . '/large/file.bin'));
+    }
+
+    public function testOpenReadStreamReturnsBytesPreviouslyStored(): void
+    {
+        $adapter = new LocalStorageAdapter($this->tmpDir);
+        $payload = "binary\x00content\x01here";
+        $key = 'reads/file.bin';
+
+        $source = $this->streamFrom($payload);
+        $adapter->store($source, $key);
+        fclose($source);
+
+        $handle = $adapter->openReadStream($key);
+        self::assertIsResource($handle);
+        $read = stream_get_contents($handle);
+        fclose($handle);
+
+        self::assertSame($payload, $read);
+    }
+
+    public function testOpenReadStreamThrowsWhenKeyDoesNotExist(): void
+    {
+        $adapter = new LocalStorageAdapter($this->tmpDir);
+
+        $this->expectException(StorageObjectNotFoundException::class);
+        $adapter->openReadStream('does/not/exist.bin');
     }
 
     /** @return resource */

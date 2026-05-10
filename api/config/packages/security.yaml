@@ -29,6 +29,7 @@ security:
 
     access_control:
         - { path: ^/api/auth/(login|register), roles: PUBLIC_ACCESS }
+        - { path: ^/api/share/, roles: PUBLIC_ACCESS }
         - { path: ^/test/, roles: PUBLIC_ACCESS }
         - { path: ^/api, roles: ROLE_USER }
 
