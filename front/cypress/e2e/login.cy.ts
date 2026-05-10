@@ -18,8 +18,8 @@ describe('Login + parcours complet', () => {
       cy.findByRole('button', { name: 'Se connecter' }).click();
 
       cy.location('pathname').should('eq', '/upload');
-      cy.contains('Téléversement').should('be.visible');
-      cy.contains(`Connecté en tant que ${email}`).should('be.visible');
+      cy.contains('Tu veux partager un fichier ?').should('be.visible');
+      cy.findByRole('button', { name: 'Se déconnecter' }).should('be.visible');
     });
 
     it('persiste la session après reload puis permet le logout', () => {
@@ -31,7 +31,7 @@ describe('Login + parcours complet', () => {
 
       cy.reload();
       cy.location('pathname').should('eq', '/upload');
-      cy.contains(`Connecté en tant que ${email}`).should('be.visible');
+      cy.contains('Tu veux partager un fichier ?').should('be.visible');
 
       cy.findByRole('button', { name: 'Se déconnecter' }).click();
       cy.location('pathname').should('eq', '/login');
@@ -60,7 +60,7 @@ describe('Login + parcours complet', () => {
       cy.findByRole('button', { name: 'Se connecter' }).click();
 
       cy.location('pathname').should('eq', '/upload');
-      cy.contains(`Connecté en tant que ${newEmail}`).should('be.visible');
+      cy.contains('Tu veux partager un fichier ?').should('be.visible');
     });
   });
 

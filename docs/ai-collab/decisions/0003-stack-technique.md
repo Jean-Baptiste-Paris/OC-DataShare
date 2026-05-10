@@ -162,6 +162,16 @@ Stockage **FS local** dans un répertoire dédié hors du repo (ex. `var/storage
 - Cohérent avec ADR 0001 qui spécifie l'agnosticité au stockage.
 - Setup MVP : `mkdir var/storage/`, variable d'env `STORAGE_PATH`, surveillance disque dans `MAINTENANCE.md` (point déjà noté).
 
+#### Implémentation incrémentale (note 2026-05-10)
+
+L'interface est **conçue dès cet ADR avec ses 3 méthodes** (`store`, `retrieve`, `delete`) pour figer la surface attendue. Mais elle est **implémentée incrémentalement à mesure que les callers émergent**, par discipline YAGNI :
+
+- US01 (upload) → ajoute `store(stream, key): void`
+- US02 (download) → ajoute `retrieve(key): stream`
+- US06 (suppression) → ajoute `delete(key): void`
+
+Bénéfice : chaque méthode est conçue avec un caller réel sous les yeux, ce qui évite de figer une sémantique (ex. comportement sur clé inexistante) sans contexte concret.
+
 ## Stack consolidée
 
 | Couche | Choix | Version | Rôle |

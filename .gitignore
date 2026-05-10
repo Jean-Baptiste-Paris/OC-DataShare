@@ -45,3 +45,4 @@ front/coverage/
 # Cypress
 front/cypress/videos/
 front/cypress/screenshots/
+/node_modules/
