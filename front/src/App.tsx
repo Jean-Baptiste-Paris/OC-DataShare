@@ -5,6 +5,7 @@ import { DesignSystemPage } from '@/pages/DesignSystemPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { UploadPage } from '@/pages/UploadPage';
+import { DownloadPage } from '@/pages/DownloadPage';
 import { useAuthStore } from '@/stores/authStore';
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/upload" element={<UploadPage />} />
+      <Route path="/d/:token" element={<DownloadPage />} />
       <Route path="/design-system" element={<DesignSystemPage />} />
     </Routes>
   );
