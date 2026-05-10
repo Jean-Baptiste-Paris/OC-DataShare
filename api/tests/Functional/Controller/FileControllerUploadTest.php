@@ -127,6 +127,29 @@ final class FileControllerUploadTest extends WebTestCase
         self::assertSame(415, $body['status']);
     }
 
+    public function testUploadReturns413WhenContentLengthExceedsLimit(): void
+    {
+        $this->client->request(
+            'POST',
+            '/api/files',
+            server: [
+                'HTTP_AUTHORIZATION' => "Bearer {$this->token}",
+                'CONTENT_LENGTH' => (string) (2 * 1024 * 1024 * 1024),
+            ],
+        );
+
+        $response = $this->client->getResponse();
+        self::assertSame(Response::HTTP_REQUEST_ENTITY_TOO_LARGE, $response->getStatusCode());
+        self::assertStringContainsString(
+            'application/problem+json',
+            $response->headers->get('Content-Type'),
+        );
+
+        $body = json_decode($response->getContent(), true);
+        self::assertSame('https://datashare.fr/errors/file-too-large', $body['type']);
+        self::assertSame(413, $body['status']);
+    }
+
     public function testUploadReturns401WithoutToken(): void
     {
         $upload = $this->makeUploadedFile('readme.txt', 'Hello world');

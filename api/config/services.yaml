@@ -7,6 +7,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    app.upload.max_size_bytes: 1073741824 # 1 Go (cf. ADR 0001 + OpenAPI 413 file-too-large)
     app.upload.blacklisted_extensions:
         - exe
         - bat
@@ -45,3 +46,9 @@ services:
     App\Service\Upload\FileValidator:
         arguments:
             $blacklistedExtensions: '%app.upload.blacklisted_extensions%'
+
+    App\EventListener\UploadSizeLimitListener:
+        arguments:
+            $maxBytes: '%app.upload.max_size_bytes%'
+        tags:
+            - { name: kernel.event_listener, event: kernel.request, method: __invoke, priority: 256 }
