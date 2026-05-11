@@ -1,0 +1,27 @@
+DataShare — Livrable 2 : lien du dépôt Git
+==========================================
+
+Repository GitHub :
+https://github.com/Jean-Baptiste-Paris/OC-DataShare
+
+Branche principale : main
+
+Contenu du repo :
+- Code source complet (api/ Symfony 8 + front/ React 18)
+- Historique de commits structuré (cf. git log)
+- README.md (installation, lancement, structure, commandes)
+- Makefile (raccourcis make install / make back / make test-* / make perf-download / make seed-demo)
+- 4 fichiers de qualité/maintenance à la racine :
+    TESTING.md     — plan de tests, pyramide (224 tests), coverage (back 93.7% / front 93.5% lignes)
+    SECURITY.md    — auth, JWT, anti-énumération, scan deps (0 vuln), procédures rotation
+    PERF.md        — k6 endpoint critique download + budget perf front Lighthouse + métriques + Monolog
+    MAINTENANCE.md — procédures MAJ deps, déploiement, rollback, sauvegarde, monitoring V2
+- docs/conception/        — modèle de domaine UML, contrat d'interface, OpenAPI 3.0.3
+- docs/ai-collab/         — 5 ADRs + journal de collaboration IA (14 séances)
+- docs/livrables/         — sources des livrables 1 et 3
+
+Auteur : Jean-Baptiste Paris
+Projet : OpenClassrooms — Architecte Logiciel
+Mission : DataShare MVP (4 semaines)
+Date de démarrage : 2026-04-19
+Date de soutenance : 2026-05-17

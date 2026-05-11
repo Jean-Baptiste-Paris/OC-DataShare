@@ -657,6 +657,73 @@ Le découpage en 5 lots a guidé l'exécution : (1) audit + plan de tests, (2) c
 
 ---
 
+## Séance 15 — 2026-05-11 (étape 6 OC, livrables finaux — collaboration normale, hors vitrine)
+
+**Contexte :** dernière étape avant soutenance. La consigne demande 3 artefacts livrables : repo Git complet (avec README + scripts deploy), documentation technique PDF (8 sections imposées), support de présentation. La consigne souligne aussi l'**harmonisation** entre repo / doc technique / présentation. Séance plan structurée en 4 lots, exécutée d'une traite après les 3 arbitrages d'outillage.
+
+### Posture adoptée
+Collaboration normale, autonomie maximale — la matière est entièrement préparée par les séances 1-14 (5 ADRs, 4 docs qualité, journal de 14 entrées, OpenAPI, modèle de domaine, contrat-interface). L'étape 6 est essentiellement **un travail de synthèse + assemblage** plus que de décisions nouvelles. 3 arbitrages d'outillage tranchés en début de séance via `AskUserQuestion` :
+1. Slides L3 : **Reveal.js HTML** (versionné dans le repo, palette DataShare custom).
+2. PDF L1 : **Google Docs / Office** (contrôle visuel total, copier le markdown source dans un éditeur visuel).
+3. Lighthouse : **lancer maintenant** (build prod + Chrome headless).
+
+### Tâches confiées
+
+**Lot 6.1 — Onboarding repo + Lighthouse + complétion PERF**
+- `README.md` à la racine : pitch + stack + docs croisées + prérequis + install 1 commande + lancement + tests + perf + structure repo + US couvertes.
+- `Makefile` à la racine : 23 cibles (`install`, `init-env`, `init-db`, `init-jwt`, `init-storage`, `back`, `front`, `front-build`, `front-preview`, `test-back`, `test-back-coverage`, `test-front`, `test-front-coverage`, `test-e2e`, `test-all`, `perf-download`, `lighthouse`, `seed-demo`, `audit`, `clean-cypress-state`). Auto-help via parsing des `##` annotations.
+- **Build prod front** : `npm run build` → bundle JS **133 KB gzipped** (cible 250 KB), CSS 4,4 KB, fonts ~135 KB. Largement sous la cible.
+- **Lighthouse** sur `/login` et `/register` (preview server local + Chrome headless via `npx -y lighthouse`). Résultats : Performance **98/100**, Best Practices **100/100**, A11y 92/100, FCP 2,0 s, LCP 2,0 s, **TBT 0 ms, CLS 0**. Rapports HTML dans `docs/livrables/lighthouse/{login,register}.report.{html,json}`.
+- `PERF.md` enrichi : §5 budget perf front complet (bundle + Lighthouse + 6 pistes optimisations classées effort/gain), §6 métriques clés journalisées (synthèse cross-niveau back+front + paragraphe optimisations), §7 Monolog renuméroté.
+- **Cleanup mineur** : `LoginPage.test.tsx` — retire un `@ts-expect-error` devenu inutile (cassait `npm run build` via `tsc -b`).
+
+**Lot 6.2 — L1 doc technique markdown source**
+- `docs/livrables/L1-doc-technique.md` complété sur les 8 sections imposées :
+  - §1 Architecture (vue d'ensemble + briques + flux + sécurisation + 5 ADRs).
+  - §2 Choix technologiques (déjà bien rempli, étendu à 18 lignes).
+  - §3 Modèle de données UML (diagramme ASCII en attendant l'export Mermaid SVG, attributs détaillés User + File, état dérivé, évolutions V2).
+  - §4 API REST (récap 8 endpoints + conventions transverses + lien OpenAPI).
+  - §5 Sécurité (synthèse SECURITY.md pour public, anti-énumération, validation upload, scan deps).
+  - §6 Qualité tests maintenance (pyramide 224 + coverage 93,7/93,5 + perf k6 + Lighthouse + accessibilité).
+  - §7 Install/exécution (miroir condensé du README).
+  - §8 IA (synthèse en 4 axes + sous-section conclusion sur le multiplicateur conditionné à la supervision active).
+- Format : markdown source prêt à coller dans Google Docs / Word pour l'export PDF visuel.
+
+**Lot 6.3 — L3 slides Reveal.js**
+- `docs/livrables/L3-slides/index.html` standalone (CDN Reveal.js 5, plugin highlight Monokai, palette DataShare custom via CSS variables).
+- 18 slides : Cover → Contexte → Périmètre → Architecture → Choix techno → Modèle UML → API → Sécurité → Tests → Perf back → Perf front → Démo → IA posture → IA vitrine US01 → Difficultés → Solutions → Évolutions V2 → Closing.
+- Composants visuels custom : `kpi-grid` (3 cards par ligne), `kpi-card` (valeur + label), `corail-bg` (slides accent gradient), `two-col` (comparaisons).
+- `docs/livrables/L3-slides/README.md` : structure + visualisation + navigation Reveal.js + 2 procédures d'export PDF (Chrome print + Decktape).
+
+**Lot 6.4 — L2 lien repo + harmonisation + livrables/README**
+- `docs/livrables/L2-lien-repository.txt` : URL GitHub + contexte projet + inventaire du contenu repo.
+- `docs/livrables/README.md` : tableau des 3 livrables avec sources/cibles/nommage final, procédure de génération PDF L1 + L3, procédure de zippage, **tableau d'audit de cohérence** (12 indicateurs croisés repo ↔ L1 ↔ L3, tous alignés ce jour).
+
+### Supervision et corrections
+- **Aucun recadrage de fond** — la matière était prête, l'exécution est de la synthèse mécanique.
+- **1 fix mineur découvert au build** : `LoginPage.test.tsx` avait un `@ts-expect-error` inutile qui faisait fail `tsc -b` (le compilateur TS n'attendait plus l'erreur signalée). Retiré, build passe en 439 ms.
+- **Cohérence des chiffres clés** vérifiée à la main entre repo / L1 / L3 (12 indicateurs : tests, coverage, perf back, perf front, bundle, composants DS, endpoints, US). Tableau d'audit dans `docs/livrables/README.md` pour faciliter la maintenance future si un chiffre évolue.
+
+### Apports et limites constatés
+- **Apport — Synthèse fluide grâce à la matière préparée au fil de l'eau** : aucune section du PDF L1 n'a nécessité de creuser le code ou de redécouvrir des décisions. Tout était dans les ADRs, les 4 docs qualité, le contrat-interface, le modèle de domaine, le journal. Le « *ne pas inventer la section IA à la fin* » (mémoire `feedback_journal_collab.md`) a payé concrètement.
+- **Apport — Scripts d'install reproductibles** : le `Makefile` rend l'install 1-commande (`make install`) du clone à un projet utilisable. Démontre la maturité opérationnelle attendue par la consigne « scripts de déploiement ».
+- **Apport — Lighthouse 98/100 sans optimisation lazy avancée** : confirme que les choix structurels (Vite, CSS Modules, pas de blob front, skeletons) suffisent pour atteindre les seuils OC. Pas de besoin d'optimisations V2 prématurées.
+- **Apport — Slides en HTML versionné dans le repo** : permet l'évolution incrémentale et l'audit Git, contrairement à un .pptx opaque. Decktape automatise l'export PDF si besoin.
+- **Limite — PDF L1 export visuel manuel** : le markdown source est prêt mais le copier-coller dans Google Docs/Word + ré-application des styles + insertion d'images est manuel. Coût ~1 h. Acceptable vu qu'on s'est imposé l'export Office pour le contrôle visuel ; sinon Pandoc/LaTeX automatise mais demande LaTeX installé.
+- **Limite — Captures coverage HTML pas insérées dans le PDF** : les rapports `api/var/coverage/index.html` et `front/coverage/index.html` sont disponibles en local, mais leur intégration dans le PDF L1 §6 reste à faire à la main lors de l'export Office.
+- **Limite — Test mentor toujours non programmé** : la consigne le pose en « point de vigilance si temps », mais à J-6 de la soutenance, à arbitrer ASAP.
+
+### Dettes ouvertes en fin de séance (préparatifs soutenance)
+- **Push GitHub** du repo (s'assurer qu'il est public ou que le mentor a les droits read).
+- **Export PDF L1** depuis Google Docs/Word (insérer captures coverage + diagrammes Mermaid + schéma archi Lucidchart).
+- **Export PDF L3** depuis Reveal.js (Chrome print mode ou Decktape).
+- **Renommage final** des 3 fichiers selon convention OC : `Paris_Jean-Baptiste_<N>_<livrable>_042026`.
+- **Zip final** : `DataShare_Paris_Jean-Baptiste.zip` regroupant les 3 fichiers.
+- **Test mentor** (à organiser dans les 4-5 jours).
+- **Soutenance** prévue 2026-05-17.
+
+---
+
 ## Séance 4 — 2026-04-25
 
 **Contexte :** reprise après plusieurs jours d'interruption. Passe d'arbitrage des 5 ambiguïtés restantes, rédaction d'un ADR détaillé sur la stratégie d'authentification JWT, et arbitrage de la stack technique complète. Séance longue et dense, structurante pour tout le reste du projet.
