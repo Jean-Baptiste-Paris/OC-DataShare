@@ -35,6 +35,7 @@
         <exclude>
             <directory>src/Dto</directory>
             <directory>src/Exception</directory>
+            <directory>src/Controller/Test</directory>
             <file>src/Kernel.php</file>
         </exclude>
 

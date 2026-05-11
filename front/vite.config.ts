@@ -9,14 +9,34 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  server: {
-    proxy: {
-      '/api': process.env.VITE_API_URL ?? 'http://127.0.0.1:8000',
-    },
-  },
   test: {
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     globals: true,
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html'],
+      reportsDirectory: './coverage',
+      // Périmètre métier : services, validation, pages, components, stores, lib, types.
+      // Exclu : tests, setup, types-only files, App.tsx (juste un router), main.tsx (entry).
+      include: [
+        'src/services/**/*.{ts,tsx}',
+        'src/validation/**/*.{ts,tsx}',
+        'src/pages/**/*.{ts,tsx}',
+        'src/components/**/*.{ts,tsx}',
+        'src/stores/**/*.{ts,tsx}',
+        'src/lib/**/*.{ts,tsx}',
+      ],
+      exclude: [
+        '**/*.test.{ts,tsx}',
+        '**/index.ts',
+      ],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70,
+      },
+    },
   },
 })
