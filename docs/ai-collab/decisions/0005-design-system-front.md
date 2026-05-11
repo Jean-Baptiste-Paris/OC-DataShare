@@ -132,6 +132,16 @@ Pour US03 + US04, seuls 4 composants sont strictement nécessaires (Input, Butto
 - Select reste construit comme primitive réutilisable même si l'usage métier (US10 expiration) est hors MVP — extensibilité V2.
 - DS s'arrête à 6 : pas de promesse implicite sur Tooltip, Dialog, etc.
 
+### Évolutions post-décision
+
+| Date / Séance | Composant ajouté | Trigger | Total DS |
+|---|---|---|---|
+| 2026-05-09 / S9 | **Footer** | Pages avec gradient corail full-bleed → besoin d'un footer cohérent | 7 |
+| 2026-05-11 / S13 | **Sidebar** (+ `SidebarTrigger`) | Page « Mes fichiers » US05 → navigation latérale desktop + drawer mobile | 8 |
+| 2026-05-11 / S13 | **DropdownMenu** | Kebab menu mobile sur file rows US05/US06 → condense les actions Supprimer/Accéder | 9 |
+
+> Pattern tenu : **chaque ajout est tiré par un caller réel** (pas de composant spéculatif). Les 3 ajouts respectent l'esprit de la décision initiale (pas d'extensions vers Tooltip/Dialog/etc. sans usage métier).
+
 ---
 
 ## D4 — Structure de fichiers et conventions

@@ -586,6 +586,77 @@ Différence nette vs séance 11 : vitesse de production très supérieure (US02 
 
 ---
 
+## Séance 14 — 2026-05-11 (étape 5 OC, consolidation qualité — collaboration normale, hors vitrine)
+
+**Contexte :** entrée en étape 5 (« avant de clôturer votre projet, prenez le temps de tester l'ensemble de l'application »). La consigne impose 4 documents structurés (`TESTING.md`, `SECURITY.md`, `PERF.md`, `MAINTENANCE.md`), un rapport de coverage ≥ 70 %, un scan sécurité, un test de perf sur 1 endpoint critique, et un test UX externe (mentor) si le temps le permet. Séance plan structurée en 5 lots séquentiels, dont 4 exécutés ce jour ; le test mentor reste à organiser en parallèle (non bloquant).
+
+### Posture adoptée
+Collaboration normale, autonomie élevée — la consigne étape 5 est très prescriptive (livrables nommés, seuils chiffrés, outils suggérés explicitement) → peu d'arbitrage de scope à flagger. Workflow imposé en début de séance par 3 questions `AskUserQuestion` :
+1. Outillage coverage PHP : **PCOV** (recommandé, 10× plus rapide qu'Xdebug).
+2. Scope perf k6 : **endpoint download seul** (cohérent ambiguïté #4 déjà tranchée).
+3. Test UX externe : **mentor** (à organiser en parallèle).
+
+Le découpage en 5 lots a guidé l'exécution : (1) audit + plan de tests, (2) coverage, (3) sécurité, (4) perf, (5) maintenance + UX audit + apurement dettes.
+
+### Tâches confiées
+
+**Lot 1 — Plan de tests + TESTING.md squelette**
+- Tableau plan de tests (6 US × type test × critère acceptation observable) + critères transverses (RequireAuth, persist auth, mapping HTTP→erreurs typées, streaming).
+- Pyramide actuelle quantifiée : 224 tests (57 PHPUnit + 128 Vitest + 19 Cypress + 20 hors périmètre métier strict).
+- Outils + procédure d'exécution locale documentée.
+
+**Lot 2 — Coverage instrumentation**
+- PCOV déjà installé (pas d'install nécessaire), `phpunit.dist.xml` exclusion ajoutée `src/Controller/Test/` (endpoints test-only).
+- `@vitest/coverage-v8` installé, `vite.config.ts` `coverage` section ajoutée avec `include` périmétrique (services/validation/pages/components/stores/lib) et **thresholds à 70** sur toutes les métriques.
+- Run : **Back 93,71 % lignes** (Methods 83,61 %, Classes 53,33 %). **Front 93,5 % lignes** (Statements 90,8 %, Branches 86,48 %, Functions 85,95 %). Cible OC 70 % largement atteinte.
+- TESTING.md §5 enrichi : tableaux détaillés par composant back + front, commandes, périmètres inclus/exclus, références aux rapports HTML.
+
+**Lot 3 — Sécurité**
+- `npm audit` (full + prod-only) : **0 vuln**.
+- `composer audit` (full + prod-only) : **No security vulnerability advisories found**.
+- **Régénération JWT passphrase** : `openssl rand -base64 32` → nouvelle passphrase 256 bits, sync `.env.local` + `.env.test.local`, `lexik:jwt:generate-keypair --overwrite`. **Dette héritée séance 10 purgée.** 77/77 PHPUnit verts post-régénération.
+- `SECURITY.md` rédigé : auth Argon2id + politique mdp, JWT (HS256/8h/Bearer/payload minimal), anti-énumération 3 endpoints (login/delete/share), blacklist 12 ext + magic bytes + 413 streaming, CORS + XSS + headers prod, scan deps résultats, procédure rotation passphrase + provisioning secrets prod, références OWASP/NIST/RFC.
+
+**Lot 4 — Performance**
+- k6 1.7.1 installé via Homebrew.
+- `tests/perf/seed_perf_blob.php` : crée user `perf@datashare.fr` (idempotent) + blob random N Mo sur le storage (stream-write par chunks 256 Ko) + entrée File en BDD. Affiche le token UUID sur stdout pour consommation k6.
+- `tests/perf/download.k6.js` : scenario 50 VUs / 1 min (ramp-up 10s + plateau 40s + ramp-down 10s), thresholds `p(95)<500ms` + `error_rate<1%`, checks status/Content-Disposition/body non-empty.
+- **Résultats** : ✅ 2 thresholds verts. **10 344 downloads** en 1 min, **172 req/s**, **0 erreur** (0/10 344). **p95 = 453 ms**, médiane 208 ms, max 1,13 s. 11 Go de data téléchargés à 181 MB/s. **L'archi streaming (ADR 0001) tient sans memory leak** — observation Activity Monitor : RAM PHP stable 80-100 Mo malgré 11 Go de volume cumulé.
+- `symfony/monolog-bundle` installé. Config Symfony par défaut conserve le **formatter JSON sur `php://stderr` en prod** (pattern 12-factor).
+- `PERF.md` rédigé : endpoint critique (justification ambiguïté #4), outillage k6, scénario, résultats détaillés + analyse, limites du test, budget perf front Lighthouse (cibles à mesurer post-build prod), config Monolog, métriques clés à logger en V2, commandes synthèse, évolutions V2.
+
+**Lot 5 — Maintenance + audit UX + apurement dettes**
+- `MAINTENANCE.md` rédigé : procédures dépendances (cadence + standard + urgence CVE), déploiement (pré-requis infra + procédure + env vars + provisioning initial), rollback (applicatif + BDD Doctrine + storage caveat MVP), sauvegarde/restauration BDD + storage, monitoring V2 (SLI/SLO cibles + alertes), procédures support, plan de continuité RTO/RPO, évolutions V2.
+- **ADR 0005 D3 mis à jour** : tableau « Évolutions post-décision » ajouté retraçant les 3 composants tirés par usage (Footer S9, Sidebar S13, DropdownMenu S13) → **DS = 9 composants** (vs 6 initial). Pattern « chaque ajout tiré par un caller réel » tenu.
+- **Proxy `/api` retiré** de `vite.config.ts` (inutile depuis qu'on appelle `VITE_API_URL` direct via `apiClient`).
+- **Wording Upload success** revu : « conservé chez nous pendant une semaine » → « Le lien restera actif tant que tu ne supprimes pas le fichier » (cohérent MVP : pas d'US10 expiration, suppression manuelle US06 = seul mécanisme de fin de vie).
+- **Audit UX messages d'erreur** : tutoiement systématique, actionable (Réessaie/Reconnecte-toi), pas de jargon (401/5xx jamais exposés au user), patterns alignés sur tous les services. `DEFAULT_NETWORK_MESSAGE` dupliqué à l'identique dans 3 services — duplication assumée MVP, à factoriser si 4e service apparaît.
+
+### Supervision et corrections
+- **3 arbitrages d'outillage tranchés en début de séance** (`AskUserQuestion` × 3) — pas de friction en cours d'exécution, le plan a tenu.
+- **Régression métier zéro** : aucune fonctionnalité touchée pendant la consolidation. Coverage stable, tous les tests verts à chaque étape (sanity check après l'install Monolog, après la régénération keypair, après le wording change).
+- **Workflow seed post-Cypress documenté** dans MAINTENANCE.md §6 et TESTING.md §4 — clôt la confusion isolation BDD `datashare`/`datashare_test` de la séance 13.
+- **Restart back manuel à demander à JB** : la régénération de la passphrase nécessite un restart du back qu'il avait lancé en arrière-plan (sa session UI courante est devenue 401 après rotation, il doit re-logger). Flag explicite remonté.
+- **Pas de divergence archi** : la consigne étape 5 est très prescriptive, peu de décisions à prendre. Toute la matière préparatoire (ADRs, ambiguïtés résolues, contrat-interface) était déjà alignée — la rédaction des 4 docs s'est faite en synthèse, pas en arbitrage.
+
+### Apports et limites constatés
+- **Apport — Cible coverage 70 % largement battue sur les 2 stacks** (93,71 % back / 93,5 % front lignes). L'argument oral : « la rigueur de test imposée tout au long du projet (TDD-ish sur chaque US) paie en bout de course, on n'a pas eu à ‘rajouter des tests pour la couverture' en fin de projet. »
+- **Apport — k6 sur l'endpoint cible valide l'ADR 0001 sous charge** : 11 Go de download cumulé sans memory leak côté serveur. C'est exactement le test que la décision streaming demandait. À raconter à l'oral comme « cas concret de décision archi prouvée empiriquement, pas juste théorique ».
+- **Apport — 4 documents qualité homogènes** : TESTING/SECURITY/PERF/MAINTENANCE ont une structure parallèle (sections numérotées, tableaux, références croisées vers ADRs et `CLAUDE.md`). Lisibles individuellement par un mentor ou un investisseur sans devoir lire tout le repo.
+- **Apport — Dettes héritées purgées** : JWT passphrase, ADR 0005 D3, proxy Vite, wording « semaine ». Le backlog de l'étape 4 est à zéro avant la soutenance.
+- **Limite — Pas de CI MVP**, donc les chiffres de coverage et de scan sécurité dépendent d'une exécution manuelle. Décision défendable à l'oral (« CI/CD = autre projet du parcours OC »), mais à mentionner explicitement pour ne pas se faire pinailler.
+- **Limite — Test perf mono-process** : pas de FPM, donc throughput pessimiste vs prod (172 req/s observés → projection ~600-700 req/s en prod 4 workers). Tracé dans PERF.md §4.3.
+- **Limite — Lighthouse front non encore exécuté** : section PERF.md §5 a des cibles définies mais pas de mesures réelles. À faire en bout de chaîne avant soutenance (build prod + Lighthouse en mode throttling).
+- **Limite — Test mentor non programmé** : la consigne le pose en « point de vigilance si temps », mais la séance s'est étirée sur le lot 5 plus que prévu. Action à organiser dans les 4-5 jours restant avant soutenance (deadline ~2026-05-17).
+
+### Dettes ouvertes en fin de séance
+- **(séance 14)** Lighthouse front sur `/files` post-build prod → renseigner les cibles FCP/LCP/TBT/CLS/Performance dans PERF.md §5.
+- **(séance 14)** Captures d'écran des rapports coverage HTML (`api/var/coverage/index.html` + `front/coverage/index.html`) à mettre dans `docs/livrables/` pour la section 6 du PDF L1.
+- **(séance 14)** Test UX externe avec le mentor — créneau à caler, scénario guidé déjà préparable (register → login → upload 2 fichiers → copier lien → ouvrir privé → télécharger → revenir → supprimer).
+- **Étape 5 OC ✅ achevée** côté code et documentation. Prochaine étape = consolidation des livrables OC (PDF L1 8 sections + slides L3) + dépôt zip.
+
+---
+
 ## Séance 4 — 2026-04-25
 
 **Contexte :** reprise après plusieurs jours d'interruption. Passe d'arbitrage des 5 ambiguïtés restantes, rédaction d'un ADR détaillé sur la stratégie d'authentification JWT, et arbitrage de la stack technique complète. Séance longue et dense, structurante pour tout le reste du projet.

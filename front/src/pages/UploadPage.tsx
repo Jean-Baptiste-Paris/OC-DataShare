@@ -119,8 +119,8 @@ export function UploadPage() {
                 </div>
 
                 <p className={styles.successMessage}>
-                  Félicitations, ton fichier sera conservé chez nous pendant
-                  une semaine !
+                  Félicitations, ton fichier est en ligne. Le lien restera
+                  actif tant que tu ne supprimes pas le fichier.
                 </p>
 
                 <a
