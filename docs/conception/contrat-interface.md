@@ -156,8 +156,8 @@ Pour les erreurs de validation 400, le champ `errors` (extension RFC 7807) liste
 
 - **Auth** : oui
 - **Succès 204** : pas de body, pas d'envelope
-- **Erreurs** : `401` | `404` (inexistant OU pas à toi — unifié, anti-énumération)
-- **Sémantique** : hard delete (storage puis BDD)
+- **Erreurs** : `401` | `404` (inexistant, déjà supprimé OU pas à toi — unifié, anti-énumération)
+- **Sémantique** : **storage purgé (hard delete du blob)** + **BDD soft delete (`deletedAt` set)**. La métadonnée reste en base pour l'historique « Mes fichiers » (badge « Expiré »). **Révisé 2026-05-11** : la version initiale prévoyait un hard delete BDD ; alignement sur le modèle de domaine qui prévoit `deletedAt` depuis l'étape 1, et sur l'UX `MyFilesPage` qui affiche l'historique des fichiers expirés.
 
 ### 4.7 `GET /api/share/{token}`
 

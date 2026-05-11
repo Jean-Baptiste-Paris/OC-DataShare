@@ -504,6 +504,88 @@ Différence nette vs séance 11 : vitesse de production très supérieure (US02 
 
 ---
 
+## Séance 13 — 2026-05-11 (étape 4 OC, US05 historique + US06 suppression — collaboration normale, hors vitrine)
+
+**Contexte :** clôture de l'étape 4 OC en couplant US05 (historique « Mes fichiers ») et US06 (suppression de fichier) dans la même séance. US06 a été ajoutée au scope en cours de séance, à la demande explicite du user lors de la passe UI : la maquette « Mes fichiers » montre un bouton « Supprimer » sur chaque file row, le user a choisi d'implémenter US06 maintenant pour que le bouton soit fonctionnel plutôt que cosmétique. Couplage assumé, séance plus longue mais pyramide de tests cohérente sur les deux US ensemble. Toujours en collaboration normale (cf. mémoire `feedback_us_vitrine_ia.md` — vitrine = US01 uniquement).
+
+### Posture adoptée
+**Collaboration normale à autonomie variable selon la couche, identique à la séance 12 :**
+- Back : autonomie large. Pas de carte mentale par sous-tâche, pas de validation orale unitaire, juste flag systématique aux frontières du scope MVP (cf. mémoires `feedback_arbitrage_mvp` + `feedback_pragmatique_vs_puriste`).
+- Front : autonomie jusqu'à la première version visible, puis **passe UI itérative ensemble** (~12-15 micro-ajustements visuels + 2 maquettes mobile que le user a partagées en cours de route).
+- Scope : 3 arbitrages structurants en début de séance (visibilité soft-deleted / bouton Supprimer / sidebar) tranchés via `AskUserQuestion`. Un revirement assumé en cours de séance sur l'arbitrage soft-deleted, tracé.
+
+### Tâches confiées
+**Back US05 (autonome) :**
+- `FileRepository::findAllByUserOrderedByCreatedAtDesc(User)` (filtre owner + tri DESC, exploite l'index composite `(user_id, created_at DESC)` posé séance 11). Initialement `findAvailableByUser…` avec filtre `deletedAt IS NULL` (option « masquer les soft-deleted » du début de séance), **renommée et déshabillée du filtre lors du revirement** (cf. Supervision).
+- `FileController::list` (`GET /api/files`) : envelope `{data: [FileSummary, ...]}`, JWT requis.
+- `FileSummary` enrichi du champ `status: 'available' | 'deleted'` (constantes `STATUS_AVAILABLE` / `STATUS_DELETED`), dérivé de `File::isAvailable()`. Modifie le contrat OpenAPI livré étape 1 — tracé.
+
+**Back US06 (autonome) :**
+- `StorageInterface::delete(string $key): void` (idempotent, no-throw si missing — pattern S3) + `LocalStorageAdapter::delete` (unlink + check is_file). Discipline YAGNI tenue : `delete` ajouté uniquement maintenant que son caller (US06) existe.
+- `FileDeletionService` (nouveau service dans `App\Service\Deletion`, SRP délibéré vs étendre `FileService`) : orchestre `storage.delete → file.markDeleted → em.flush`. Ordre choisi (storage avant flush) tolère un orphan blob en cas de failure flush — préférable à un orphan inverse (entrée invisible mais blob présent). Tracé en commentaire de service.
+- `FileController::delete` (`DELETE /api/files/{id}`) : 404 unifié sur 4 cas (UUID malformé / inexistant / déjà supprimé / appartenant à un autre user) — anti-énumération OWASP A01 (cf. contrat-interface §4.6).
+
+**Back tests : +16 PHPUnit → 77 verts** (61 → 77).
+- US05 : 4 integration `FileRepository` (tri / inclusion soft-deleted / isolation owner / empty array) + 4 functional `FileController::list` (200 + isolation owner / inclusion soft-deleted avec status / empty / 401).
+- US06 : 2 unit `LocalStorageAdapter::delete` (purge + idempotent) + 1 unit `FileDeletionService` (ordre des appels storage→flush vérifié) + 5 functional `FileController::delete` (204 + soft-delete + blob purgé / 404 owned by other / 404 unknown / 404 already soft-deleted / 401).
+
+**Front (autonome jusqu'à passe UI) :**
+- `components/RequireAuth.tsx` (wrapper redirect `/login` si `useAuthStore.token === null`) — **clôt la dette routing privé séance 10**. Wrap `/upload` + `/files` dans `App.tsx`.
+- `components/ui/Sidebar/` (8e composant DS) : sidebar fixe desktop + drawer overlay mobile (ESC ferme, focus auto sur la croix à l'ouverture, clic overlay ferme, animation `transform` + `prefers-reduced-motion`). Header drawer `[X DataShare]` aligné en mobile via wrapper `display: contents` desktop / `flex` mobile. Largeur `min(260px, 70vw)` mobile.
+- `components/ui/DropdownMenu/` (9e composant DS) : kebab menu (`MoreVertical`) basé sur `@radix-ui/react-dropdown-menu` (focus management, ESC, click outside, navigation clavier fournis). API : `items: DropdownMenuItem[]` + `ariaLabel`. Variant `destructive` pour la suppression. Utilisé sur les file rows mobile pour condenser Supprimer + Accéder.
+- `services/fileService` enrichi de `list()` et `delete(id)` (mapping HTTP → erreurs typées : `FileListError` 2 kinds, `FileDeleteError` 3 kinds).
+- `pages/MyFilesPage.tsx` route `/files` :
+  - Layout sidebar gradient orange + main fond blanc, topbar fond pâle `--color-button-primary-bg` + border-bottom orange.
+  - Topbar desktop : hamburger (mobile only) + actions à droite « Ajouter des fichiers » (action sombre) + « Déconnexion » (borderless orange).
+  - Topbar mobile : hamburger à gauche + bouton icône `CloudUpload` compact à droite (les actions desktop sont masquées en mobile via media query).
+  - `Switch` 3 segments « Tous / Actifs / Expirés » (filtrage clientside, full-width 3×1/3 en mobile via `[role='radio'] { flex: 1 }`).
+  - File rows : icône mappée au mimeType (`image/*` → FileImage, `audio/*` → FileAudio, `video/*` → FileVideo, `application/pdf`/`text/*` → FileText, défaut → File générique), nom + subline « Envoyé le DD mois YYYY ».
+  - Actions desktop : 2 boutons inline `Supprimer` (Trash2) + `Accéder` (ArrowRight). Actions mobile : `DropdownMenu` kebab. Bascule via media query CSS, pas de re-render dynamique.
+  - Optimistic update sur la suppression : flip immédiat `status: 'deleted'`, rollback si l'API échoue (5xx). Sur 401 : redirect `/login`.
+  - États : `loading` (3 skeletons + `prefers-reduced-motion`) / `ready` (empty / liste) / `error` (Callout).
+- `UploadPage` : header CTA « Mon espace » → `/files` (au lieu de « Se déconnecter », qui migre dans la sidebar de Mes fichiers).
+- `Header` global et `Sidebar` brand : logo en `#FFFFFF` blanc pur (et non `--color-text-on-dark` qui est un beige #F3EEEA trop sourd).
+- **Tests Vitest : +30 → 128 verts** (98 → 128) — 2 RequireAuth + 7 Sidebar + 2 DropdownMenu + 13 MyFilesPage + 4 fileService.list + 4 fileService.delete + adaptation UploadPage tests.
+- **Cypress E2E : +5 → 19 verts** (14 → 19) — `my-files.cy.ts` 5 scénarios (RequireAuth redirect / liste vide / liste tri DESC + Accéder / Supprimer optimistic + switch Expirés / Déconnexion vide store + redirect). Adaptation `login.cy.ts` (logout passe désormais par `/files` puis bouton Déconnexion sidebar).
+
+**Outillage / fixtures :**
+- `api/tests/fixtures/seed_files_demo.php` : script idempotent re-exécutable post-Cypress run. Crée le user s'il n'existe pas (hash Argon2id natif PHP), insère 7 fichiers démo couvrant les variantes mimeType (image/audio/pdf/text/csv/video/zip) + 2 soft-deleted. Usage : `APP_ENV=test php tests/fixtures/seed_files_demo.php [email] [password]` (defaults : `demo@datashare.fr` / `plainPassword`).
+
+**Doc :**
+- `docs/conception/contrat-interface.md §4.6` : révisé 2026-05-11 — « hard delete » initial → « storage purgé + BDD soft delete (`deletedAt`) ». Alignement sur le modèle de domaine (qui prévoit `deletedAt` depuis l'étape 1) et sur l'UX `MyFilesPage` qui affiche l'historique des fichiers expirés.
+- `docs/conception/openapi.yaml` `FileSummary` : ajout du champ `status: 'available' | 'deleted'` avec description et exemple.
+- `docs/maquettes/NOTES.md` (gitignored) : 3 décisions ajoutées (callout durée masqué / état Expiré remappé / wording badge).
+
+### Supervision et corrections
+- **Revirement « masquer soft-deleted » → « lister tout avec switch »** : en début de séance, `AskUserQuestion` a tranché « Masquer (filtrer deletedAt IS NULL) » côté liste. En cours de passe UI, le user demande de réintroduire le Switch maquette « Tous / Actifs / Expirés ». Le copilote a flaggé immédiatement l'incohérence sémantique (un filtre qui ne filtre rien si on ne montre que les disponibles), proposé 3 nouvelles options via `AskUserQuestion`. User a choisi l'option « Activer la liste complète + switch Tous/Disponibles/Supprimés ». Conséquences : retire le filtre `deletedAt` du repo, ajoute le champ `status` à FileSummary (modifie OpenAPI livré étape 1), modifie 4 tests (FileRepository + FileController). **Argument oral** : « voici un revirement de scope tracé proprement — décision initiale → implémentation → contre-décision → re-implémentation + maj contrat. Le journal montre la chaîne de décision. »
+- **Couplage US05 + US06 décidé en passe UI** : la maquette « Mes fichiers » a un bouton Supprimer sur chaque row. En début de séance, `AskUserQuestion` avait tranché « Caché jusqu'à US06 ». En cours de passe, le user demande explicitement le bouton fonctionnel → ouvre US06 dans la même séance. 5 nouvelles tasks créées (storage delete / service / controller / front service+button / doc). Couplage tracé dans ce journal.
+- **Revirement contrat-interface §4.6 « hard delete » → « soft delete + storage purge »** : flag immédiat pendant la passe UI (« on affiche pas les fichiers supprimés mais ceux expirés oui »). Le user veut que les fichiers supprimés restent visibles en « Expirés ». La spec contrat disait « hard delete (storage puis BDD) », le modèle de domaine prévoyait déjà `deletedAt`. Alignement choisi : storage hard delete + BDD soft delete. Doc maj. **Argument oral** : « le modèle de domaine était déjà compatible — c'est le contrat-interface qui était incohérent depuis l'étape 1. Une revue tardive l'a révélé. »
+- **Wording sidebar — pas d'avatar/email user** : en passe UI mobile, la maquette montre « Claire Marie » + avatar à droite de la topbar. `NOTES.md` séance 11 + arbitrage séance 12 ont tranché « pas d'affichage email/nom user MVP ». Tenu malgré la maquette mobile. Conséquence dérivée : « Ajouter des fichiers » et « Se déconnecter » nécessitent un point d'entrée alternatif en mobile. `AskUserQuestion` a tranché : drawer mobile = juste « Mes fichiers » + bouton « Se déconnecter » centré en bas + copyright. Topbar mobile : bouton icône `CloudUpload` compact à droite.
+- **Détournement sémantique du token DS** : pour le logo blanc franc sur fond gradient, pas de token DS « blanc pur » disponible (`--color-text-on-dark` est un beige). Choix : valeur littérale `#FFFFFF` avec commentaire de note dans Header.module.css + Sidebar.module.css indiquant qu'on devrait promouvoir un token dédié si l'usage se généralise. Tracé pour ne pas grossir le DS prématurément.
+- **Bizarrerie isolation BDD** : le user signale que ses fichiers seedés disparaissent à chaque `npx cypress run`. Diagnostic : `doctrine.yaml` a déjà `dbname_suffix: '_test%env(default::TEST_TOKEN)%'` → en `APP_ENV=test`, la BDD est `datashare_test`, isolée de `datashare` (dev). Mais comme la session UI du user tourne aussi en `APP_ENV=test` (pour avoir les routes `/test/*/reset` que Cypress consomme), elle tape sur la même `datashare_test` que Cypress wipe. **Solution choisie** : enrichir le seed pour qu'il soit idempotent et auto-créateur de user → un `php tests/fixtures/seed_files_demo.php` post-Cypress restaure tout en 2 secondes. Pas de double back ni de basculement d'env.
+- **Style de bouton réutilisé sans relire le DS (régression de la séance 12 répétée)** : sur le bouton « Accéder » mobile, j'ai initialement écrit un fond blanc. User : « Les boutons supprimer et accéder sont des primary (fill pas blanc mais correspondant au bouton primary) ». Aligné sur `--color-button-primary-bg`. **Mécanisme à ancrer** : avant tout style customisé sur un élément visuellement proche d'un composant DS, lire le CSS du composant et répliquer. La leçon n'a pas été retenue de la séance 12 — à inscrire en mémoire.
+- **Itérations visuelles MyFilesPage** : ~15 micro-ajustements (taille logo, padding nav, position copyright, fond de la section, border topbar, font-weight subline, alignement icône fichier, taille titre, switch full-width mobile, etc.). Pattern récurrent : le user signale 1-2 ajustements à la fois, je code + push, il valide ou affine. Pattern coûteux en allers-retours (cf. limite déjà notée séance 11) — pas de meilleur mécanisme proposé cette fois.
+- **Cypress test KO « redirect /login sans token »** : `clearLocalStorage()` puis `cy.visit('/files')` restait sur `/files`. Diagnostic : ordre/timing des commandes Cypress. Workaround propre : restructurer en 2 `describe` blocks, et utiliser `cy.visit('/files', { onBeforeLoad(win) { win.localStorage.clear() } })` pour garantir le clear AVANT le mount React. 4 tests passants déjà avant fix.
+
+### Apports et limites constatés
+- **Apport — Pyramide de tests complète sur 2 US couplées** : 16 PHPUnit (4 integration repo + 4 functional list + 2 unit storage delete + 1 unit deletion service + 5 functional delete) + 30 Vitest (RequireAuth + Sidebar + DropdownMenu + MyFilesPage + service) + 5 Cypress E2E (RequireAuth + parcours complet + Supprimer optimistic). Démontre la même rigueur sur US05+US06 que sur US01 vitrine, sans la traçabilité granulaire commit-par-sous-tâche.
+- **Apport — DS enrichi de 2 composants** : `Sidebar` (8e) et `DropdownMenu` (9e). Tous deux basés sur Radix UI pour l'a11y (focus management, ESC, navigation clavier). Pattern réutilisable pour V2 si on ajoute d'autres pages avec navigation latérale ou menus contextuels. **Argument oral** : « le DS croît au rythme des besoins, pas en avance — chaque composant ajouté répond à un caller réel. »
+- **Apport — 3 revirements tracés sans casser le narratif** : (1) soft-deleted masqués → listés avec switch, (2) bouton Supprimer caché → US06 implémentée, (3) contrat-interface hard delete → soft delete + storage purge. Chaque revirement est un point d'apprentissage : la décision initiale était défendable, l'évolution est défendable, et la trace montre la maturité de la collaboration. **À l'oral** : c'est exactement le type de moment qu'un mentor cherche à voir — « comment tu gères un changement d'avis du commanditaire » est le scénario réel d'un projet client.
+- **Apport — Discipline scope/MVP préservée** : malgré l'extension US06 in-flight, on a tenu les 5 zones US10/US09 explicitement hors MVP (callout expiration / état Expiré dérivé US10 / champ mdp upload-side / champ mdp download-side / icône cadenas mobile). Le mécanisme « flag avant code » a marché à chaque fois.
+- **Limite — Style bouton non-DS répétée (régression séance 12)** : la limite identifiée séance 12 « lire `Button.module.css` AVANT de styler manuellement un élément visuellement proche d'un composant DS » a été répétée à l'identique sur les boutons Accéder/Supprimer de cette séance. La mémoire ne couvre pas explicitement ce cas, donc le copilote n'a pas appliqué la leçon. **Action** : ajouter une mémoire dédiée (`feedback_align_ds_avant_style.md`) pour que le réflexe soit systématique.
+- **Limite — Itérations UI visuelles non rationalisées (régression séance 11)** : ~15 allers-retours sur Mes fichiers, principalement parce que les micro-ajustements (bordures, fond, espacement, alignement) ne se voient qu'au rendu. Idem séance 11 : pas de mécanisme de batching efficace trouvé. À l'avenir, sur des passes UI longues, proposer dès le 5e ajustement : « on liste les 3-5 derniers points pour faire un pass groupé ? »
+- **Limite — Couplage US06 in-flight = scope creep accepté** : décider en cours de séance d'ajouter US06 a fait passer la séance de ~3-4h à 6-7h. Acceptable parce que le couplage UX est fort (bouton Supprimer fonctionnel = liste ergonomique), mais pattern à manier prudemment. **Pour la prochaine US** : ne plus accepter d'ajout de scope hors arbitrage explicite début de séance.
+- **Limite — Wipe BDD partagée dev/test découvert tardivement** : la confusion `datashare` (dev) / `datashare_test` (auto-suffixée par doctrine en env test) a été clarifiée seulement après que le user signale la perte de ses fichiers. Aurait pu être anticipé en lisant `doctrine.yaml` lors du seed initial. À l'avenir : sur tout script de seed local, identifier la BDD cible explicitement et la documenter dans le doc-block du script.
+
+### Dettes ouvertes en fin de séance
+- **`cypress/e2e/my-files.cy.ts` : 5 scénarios à exécuter périodiquement** (déjà OK aujourd'hui : `npx cypress run` = 19/19 verts).
+- **Étape 4 OC ✅ achevée** — 6 US MVP toutes implémentées (US01/02/03/04/05/06). Prochaine étape OC = consolidation des livrables (Section 6 PDF, `TESTING/SECURITY/PERF/MAINTENANCE.md`, ADR 0005 D3 maj DS = 9 composants désormais).
+- **Dettes héritées séance 11/12 toujours ouvertes** : JWT passphrase à régénérer + `SECURITY.md`, README global du DS, ébauches `TESTING/SECURITY/PERF/MAINTENANCE.md`, proxy `/api` dans `vite.config.ts`, wording success « une semaine » sur UploadPage.
+- **(séance 13)** Mémoire à ajouter : « Aligner sur composant DS existant avant tout style customisé » (`feedback_align_ds_avant_style.md`).
+- **(séance 13)** Workflow seed à rappeler post-Cypress : `cd api && APP_ENV=test php tests/fixtures/seed_files_demo.php` recrée user + 7 fichiers démo en 2 sec.
+
+---
+
 ## Séance 4 — 2026-04-25
 
 **Contexte :** reprise après plusieurs jours d'interruption. Passe d'arbitrage des 5 ambiguïtés restantes, rédaction d'un ADR détaillé sur la stratégie d'authentification JWT, et arbitrage de la stack technique complète. Séance longue et dense, structurante pour tout le reste du projet.

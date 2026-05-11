@@ -448,8 +448,10 @@ components:
     FileSummary:
       type: object
       description: |
-        Représentation d'un fichier (vue propriétaire). Le `id` sert aussi de share-token public.
-      required: [id, name, sizeBytes, mimeType, createdAt]
+        Représentation d'un fichier (vue propriétaire). Le `id` sert aussi de share-token public
+        tant que `status = available` ; un fichier en `status = deleted` retourne 404 sur
+        `GET /share/{id}` et `GET /share/{id}/download`.
+      required: [id, name, sizeBytes, mimeType, createdAt, status]
       properties:
         id:
           type: string
@@ -469,6 +471,14 @@ components:
           type: string
           format: date-time
           example: '2026-04-28T14:32:11Z'
+        status:
+          type: string
+          enum: [available, deleted]
+          description: |
+            État courant du fichier. `available` = téléchargeable via `/share/{id}`.
+            `deleted` = supprimé par le propriétaire via `DELETE /files/{id}` ; le blob
+            est purgé du storage, la métadonnée reste pour l'historique « Mes fichiers ».
+          example: available
 
     SharedFile:
       type: object
