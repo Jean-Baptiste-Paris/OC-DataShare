@@ -39,7 +39,6 @@ function UploadCapture() {
 
 function renderLogin(initialEntries: Array<string | { pathname: string; state?: unknown }> = ['/login']) {
   return render(
-    // @ts-expect-error MemoryRouter accepte string | LocationDescriptor
     <MemoryRouter initialEntries={initialEntries}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
