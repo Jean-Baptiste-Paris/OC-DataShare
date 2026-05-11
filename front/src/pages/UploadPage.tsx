@@ -8,7 +8,6 @@ import { Header } from '@/components/ui/Header';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { fileService } from '@/services/fileService';
-import { useAuthStore } from '@/stores/authStore';
 import { isUploadError, type FileSummary } from '@/types/file';
 import {
   formatFileSize,
@@ -23,7 +22,6 @@ const V2_TOOLTIP = 'Disponible dans une version ultérieure.';
 
 export function UploadPage() {
   const navigate = useNavigate();
-  const logout = useAuthStore((s) => s.logout);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [status, setStatus] = useState<Status>('cta');
@@ -31,11 +29,6 @@ export function UploadPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [summary, setSummary] = useState<FileSummary | null>(null);
   const [copied, setCopied] = useState(false);
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login', { replace: true });
-  };
 
   const handleOpenForm = () => setStatus('composing');
 
@@ -97,8 +90,8 @@ export function UploadPage() {
   return (
     <div className={styles.page}>
       <Header>
-        <Button variant="action" onClick={handleLogout}>
-          Se déconnecter
+        <Button variant="action" onClick={() => navigate('/files')}>
+          Mon espace
         </Button>
       </Header>
 

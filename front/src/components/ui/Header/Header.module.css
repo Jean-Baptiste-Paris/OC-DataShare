@@ -14,7 +14,10 @@
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-bold);
   letter-spacing: inherit;
-  color: var(--color-text);
+  /* Blanc franc sur fond gradient corail (le token --color-text-on-dark est
+     un beige #F3EEEA, trop sourd pour un logo). À promouvoir en token DS
+     si réutilisé ailleurs. */
+  color: #FFFFFF;
   text-decoration: none;
 }
 

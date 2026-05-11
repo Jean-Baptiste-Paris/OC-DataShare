@@ -45,7 +45,58 @@ export const fileService = {
       throw mapUploadError(err);
     }
   },
+
+  /**
+   * Liste les fichiers du user authentifié, triés createdAt DESC.
+   * Lève {@link FileListError} en cas d'échec.
+   */
+  async list(): Promise<FileSummary[]> {
+    try {
+      const response = await apiClient.get<EnvelopedResponse<FileSummary[]>>(
+        '/api/files',
+      );
+      return response.data.data;
+    } catch (err) {
+      throw mapListError(err);
+    }
+  },
+
+  /**
+   * Supprime un fichier (purge storage + soft-delete BDD côté serveur).
+   * Lève {@link FileDeleteError} en cas d'échec.
+   */
+  async delete(id: string): Promise<void> {
+    try {
+      await apiClient.delete(`/api/files/${encodeURIComponent(id)}`);
+    } catch (err) {
+      throw mapDeleteError(err);
+    }
+  },
 };
+
+function mapListError(err: unknown): import('@/types/file').FileListError {
+  if (err instanceof AxiosError && err.response) {
+    if (err.response.status === 401) {
+      return { kind: 'unauthorized', message: DEFAULT_UNAUTHORIZED_MESSAGE };
+    }
+  }
+  return { kind: 'network', message: DEFAULT_NETWORK_MESSAGE };
+}
+
+function mapDeleteError(err: unknown): import('@/types/file').FileDeleteError {
+  if (err instanceof AxiosError && err.response) {
+    if (err.response.status === 401) {
+      return { kind: 'unauthorized', message: DEFAULT_UNAUTHORIZED_MESSAGE };
+    }
+    if (err.response.status === 404) {
+      return {
+        kind: 'not-found',
+        message: 'Le fichier demandé est introuvable.',
+      };
+    }
+  }
+  return { kind: 'network', message: DEFAULT_NETWORK_MESSAGE };
+}
 
 function mapUploadError(err: unknown): UploadError {
   if (err instanceof AxiosError && err.response) {

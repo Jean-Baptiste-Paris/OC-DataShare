@@ -32,6 +32,7 @@ function renderUpload() {
       <Routes>
         <Route path="/upload" element={<UploadPage />} />
         <Route path="/login" element={<div>Login Page</div>} />
+        <Route path="/files" element={<div>Mes fichiers Page</div>} />
       </Routes>
     </MemoryRouter>,
   );
@@ -57,6 +58,7 @@ const successPayload = {
   sizeBytes: 9,
   mimeType: 'application/pdf',
   createdAt: '2026-05-10T10:00:00+00:00',
+  status: 'available' as const,
 };
 
 describe('UploadPage', () => {

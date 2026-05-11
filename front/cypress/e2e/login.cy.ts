@@ -19,10 +19,12 @@ describe('Login + parcours complet', () => {
 
       cy.location('pathname').should('eq', '/upload');
       cy.contains('Tu veux partager un fichier ?').should('be.visible');
-      cy.findByRole('button', { name: 'Se déconnecter' }).should('be.visible');
+      // Depuis l'intro de Mes fichiers (US05), le header de UploadPage expose
+      // « Mon espace » (le logout vit désormais dans la sidebar de /files).
+      cy.findByRole('button', { name: 'Mon espace' }).should('be.visible');
     });
 
-    it('persiste la session après reload puis permet le logout', () => {
+    it('persiste la session après reload puis permet le logout via Mon espace', () => {
       cy.visit('/login');
       cy.findByLabelText('Email').type(email);
       cy.findByLabelText('Mot de passe').type(password);
@@ -33,7 +35,10 @@ describe('Login + parcours complet', () => {
       cy.location('pathname').should('eq', '/upload');
       cy.contains('Tu veux partager un fichier ?').should('be.visible');
 
-      cy.findByRole('button', { name: 'Se déconnecter' }).click();
+      // Logout passe désormais par /files (sidebar) puis bouton Déconnexion.
+      cy.findByRole('button', { name: 'Mon espace' }).click();
+      cy.location('pathname').should('eq', '/files');
+      cy.findByRole('button', { name: /Déconnexion/ }).click();
       cy.location('pathname').should('eq', '/login');
       cy.window().its('localStorage').invoke('getItem', 'datashare-auth')
         .then((raw) => {
