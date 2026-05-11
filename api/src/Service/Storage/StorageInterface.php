@@ -20,4 +20,11 @@ interface StorageInterface
      * @throws StorageObjectNotFoundException when no object exists for $key
      */
     public function openReadStream(string $key);
+
+    /**
+     * Remove the object stored at $key. Idempotent: silently succeeds if the
+     * object does not exist (callers may delete a key whose blob is already gone
+     * after a previous failure).
+     */
+    public function delete(string $key): void;
 }

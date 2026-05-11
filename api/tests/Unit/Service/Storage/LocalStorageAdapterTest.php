@@ -96,6 +96,29 @@ final class LocalStorageAdapterTest extends TestCase
         $adapter->openReadStream('does/not/exist.bin');
     }
 
+    public function testDeleteRemovesPreviouslyStoredObject(): void
+    {
+        $adapter = new LocalStorageAdapter($this->tmpDir);
+        $source = $this->streamFrom('to-be-removed');
+        $adapter->store($source, 'gone/file.bin');
+        fclose($source);
+        self::assertFileExists($this->tmpDir . '/gone/file.bin');
+
+        $adapter->delete('gone/file.bin');
+
+        self::assertFileDoesNotExist($this->tmpDir . '/gone/file.bin');
+    }
+
+    public function testDeleteIsIdempotentWhenKeyDoesNotExist(): void
+    {
+        $adapter = new LocalStorageAdapter($this->tmpDir);
+
+        $adapter->delete('never/existed.bin');
+
+        // No exception means OK — idempotent silent success.
+        self::assertTrue(true);
+    }
+
     /** @return resource */
     private function streamFrom(string $bytes)
     {

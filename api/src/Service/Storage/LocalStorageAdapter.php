@@ -51,4 +51,17 @@ class LocalStorageAdapter implements StorageInterface
 
         return $handle;
     }
+
+    public function delete(string $key): void
+    {
+        $absolutePath = $this->rootPath . '/' . $key;
+
+        if (!is_file($absolutePath)) {
+            return; // idempotent
+        }
+
+        if (!@unlink($absolutePath)) {
+            throw new RuntimeException(sprintf('Cannot delete "%s".', $absolutePath));
+        }
+    }
 }
