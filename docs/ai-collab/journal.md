@@ -608,7 +608,7 @@ Le découpage en 5 lots a guidé l'exécution : (1) audit + plan de tests, (2) c
 **Lot 2 — Coverage instrumentation**
 - PCOV déjà installé (pas d'install nécessaire), `phpunit.dist.xml` exclusion ajoutée `src/Controller/Test/` (endpoints test-only).
 - `@vitest/coverage-v8` installé, `vite.config.ts` `coverage` section ajoutée avec `include` périmétrique (services/validation/pages/components/stores/lib) et **thresholds à 70** sur toutes les métriques.
-- Run : **Back 93,71 % lignes** (Methods 83,61 %, Classes 53,33 %). **Front 93,5 % lignes** (Statements 90,8 %, Branches 86,48 %, Functions 85,95 %). Cible OC 70 % largement atteinte.
+- Run : **Back 93,71 % lignes** (Methods 83,61 %, Classes 53,33 %). **Front 94,41 % lignes** (Statements 91,59 %, Branches 87,07 %, Functions 86,66 %). Cible OC 70 % largement atteinte.
 - TESTING.md §5 enrichi : tableaux détaillés par composant back + front, commandes, périmètres inclus/exclus, références aux rapports HTML.
 
 **Lot 3 — Sécurité**

@@ -139,10 +139,10 @@ Code Coverage Report:
 ### 5.2 Front (Vitest + V8)
 
 ```
-Statements   : 90.80% (405/446)
-Branches     : 86.48% (256/296)
-Functions    : 85.95% (104/121)
-Lines        : 93.50% (374/400)
+Statements   : 91.59% (403/440)
+Branches     : 87.07% (256/294)
+Functions    : 86.66% (104/120)
+Lines        : 94.41% (372/394)
 ```
 
 | Périmètre | Lignes | Notes |

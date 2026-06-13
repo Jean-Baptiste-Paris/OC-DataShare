@@ -81,7 +81,7 @@ Vérifier que les chiffres clés sont identiques entre :
 |---|---|---|---|
 | Nombre de tests | 224 (TESTING.md §2) | §6.1 | KPI slide 9 |
 | Coverage back | 93,71 % lignes | §6.2 | KPI slide 9 |
-| Coverage front | 93,5 % lignes | §6.2 | KPI slide 9 |
+| Coverage front | 94,41 % lignes | §6.2 | KPI slide 9 |
 | Lighthouse Perf | 98 / 100 | §6.3 | KPI slide 11 |
 | Bundle JS gzipped | 133 KB | §6.3 | KPI slide 11 |
 | k6 throughput | 172 req/s | §6.3 | KPI slide 10 |
