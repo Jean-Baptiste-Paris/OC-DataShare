@@ -25,7 +25,6 @@ export default defineConfig({
         'src/pages/**/*.{ts,tsx}',
         'src/components/**/*.{ts,tsx}',
         'src/stores/**/*.{ts,tsx}',
-        'src/lib/**/*.{ts,tsx}',
       ],
       exclude: [
         '**/*.test.{ts,tsx}',
