@@ -3,13 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
     <title>DataShare — Soutenance OC Architecte Logiciel</title>
-
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reset.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/theme/white.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/highlight/monokai.css" />
 
     <style>
       :root {
@@ -17,10 +14,9 @@
         --ds-corail: #E77A6E;
         --ds-gradient-start: #DE6262;
         --ds-gradient-end: #FFB88C;
-        --ds-text: #000;
+        --ds-text: #111;
         --ds-bg: #fff;
       }
-
       .reveal {
         font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
         color: var(--ds-text);
@@ -31,284 +27,306 @@
         letter-spacing: -0.01em;
       }
       .reveal h1 { font-size: 2.4em; }
-      .reveal h2 { font-size: 1.7em; margin-bottom: 0.4em; }
-      .reveal h3 { font-size: 1.2em; }
+      .reveal h2 { font-size: 1.4em; margin-bottom: 0.2em; border-bottom: 2px solid var(--ds-primary); padding-bottom: 0.1em; }
+      .reveal h3 { font-size: 1em; margin: 0.3em 0 0.15em; }
       .reveal a { color: var(--ds-primary); }
       .reveal strong { color: var(--ds-primary); }
-      .reveal .accent { color: var(--ds-primary); }
-      .reveal .corail-bg {
-        background: linear-gradient(0deg, var(--ds-gradient-start), var(--ds-gradient-end));
-        color: #fff;
-      }
-      .reveal .corail-bg h1, .reveal .corail-bg h2, .reveal .corail-bg h3,
-      .reveal .corail-bg p, .reveal .corail-bg strong, .reveal .corail-bg li {
-        color: #fff;
+      .accent { color: var(--ds-primary); }
+
+      /* Garantit que rien ne déborde hors du cadre lors de l'export PDF */
+      .reveal .slides section {
+        overflow: hidden;
+        box-sizing: border-box;
       }
 
-      .reveal table { font-size: 0.7em; }
-      .reveal table th { color: var(--ds-primary); }
-      .reveal table td, .reveal table th { padding: 0.3em 0.6em; }
-
-      .reveal pre code {
-        font-size: 0.65em;
-        line-height: 1.4;
-        max-height: 500px;
+      .corail-bg {
+        background: linear-gradient(135deg, var(--ds-gradient-start), var(--ds-gradient-end));
+        color: #fff !important;
       }
+      .corail-bg h1, .corail-bg h2, .corail-bg h3,
+      .corail-bg p, .corail-bg strong, .corail-bg li,
+      .corail-bg code { color: #fff !important; }
+      .corail-bg h2 { border-bottom-color: rgba(255,255,255,0.4); }
+
+      .reveal table { font-size: 0.65em; width: 100%; }
+      .reveal table th { color: var(--ds-primary); border-bottom: 1px solid var(--ds-primary); }
+      .reveal table td, .reveal table th { padding: 0.2em 0.5em; }
 
       .kpi-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 1em;
-        margin: 1em 0;
+        gap: 0.5em;
+        margin: 0.5em 0;
       }
       .kpi-card {
-        border: 1px solid var(--ds-primary);
-        border-radius: 12px;
-        padding: 1em;
+        border: 2px solid var(--ds-primary);
+        border-radius: 10px;
+        padding: 0.55em;
         background: rgba(226, 127, 41, 0.05);
+        text-align: center;
       }
       .kpi-card .value {
-        font-size: 2em;
+        font-size: 1.7em;
         font-weight: 700;
         color: var(--ds-primary);
         line-height: 1;
-        margin-bottom: 0.2em;
+        margin-bottom: 0.15em;
       }
-      .kpi-card .label {
-        font-size: 0.7em;
-        color: #555;
-      }
+      .kpi-card .label { font-size: 0.62em; color: #555; }
 
       .two-col {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: 2em;
+        gap: 1.2em;
+        text-align: left;
+      }
+      .three-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 1em;
         text-align: left;
       }
 
-      .badge {
+      .reveal ul { margin-left: 0.5em; margin-top: 0; }
+      .reveal li { margin-bottom: 0.15em; }
+
+      .tag {
         display: inline-block;
-        padding: 0.15em 0.6em;
+        padding: 0.1em 0.5em;
         border-radius: 999px;
-        background: var(--ds-primary);
-        color: #fff;
         font-size: 0.6em;
         vertical-align: middle;
+        font-weight: 600;
       }
-      .badge.ok { background: #2e7d32; }
-      .badge.warn { background: #f57c00; }
+      .tag.ok  { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
+      .tag.v2  { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
+      .tag.jwt { background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9; }
+
+      code { font-size: 0.85em; background: #f5f5f5; padding: 0.1em 0.3em; border-radius: 4px; color: #c62828; }
+      .corail-bg code { background: rgba(255,255,255,0.2); color: #fff; }
+
+      /* Empêche les blocs pre de faire déborder la slide */
+      .reveal pre {
+        max-height: 320px;
+        overflow: hidden;
+        margin: 0 0 0.4em;
+        font-size: 0.78em;
+        line-height: 1.4;
+      }
+      /* Réduit l'espace entre le h2 et le premier élément enfant */
+      .reveal .slides section > *:first-child { margin-top: 0; }
+      .reveal p { margin: 0.3em 0; }
+
+      .slide-note {
+        font-size: 0.58em;
+        color: #888;
+        font-style: italic;
+        margin-top: 0.5em;
+        border-top: 1px solid #eee;
+        padding-top: 0.3em;
+      }
     </style>
   </head>
   <body>
     <div class="reveal">
       <div class="slides">
 
-        <!-- ===========================================================
-             1. COVER
-             =========================================================== -->
+        <!-- 1. COVER -->
         <section class="corail-bg">
           <h1>DataShare</h1>
-          <h3 style="margin-top:0.6em;">Plateforme de partage de fichiers sécurisée</h3>
-          <p style="margin-top:2em; font-size: 0.6em;">
-            Soutenance OpenClassrooms — Architecte Logiciel<br>
-            <strong>Jean-Baptiste Paris</strong> · 2026-05-17
+          <h3 style="margin-top:0.5em; font-weight:400;">Plateforme de partage de fichiers sécurisée</h3>
+          <p style="margin-top:2.5em; font-size:0.65em; opacity:0.9;">
+            Soutenance OpenClassrooms — Parcours Architecte Logiciel<br>
+            <strong>Jean-Baptiste Paris</strong>
           </p>
         </section>
 
-        <!-- ===========================================================
-             2. CONTEXTE
-             =========================================================== -->
+        <!-- 2. CONTEXTE FONCTIONNEL -->
         <section>
-          <h2>Contexte</h2>
-          <p style="text-align:left;">
-            <strong>DataShare</strong> est une jeune entreprise qui lance un MVP de plateforme de transfert de fichiers
-            sécurisée pour <strong>freelances et petites entreprises</strong>.
-          </p>
-          <ul>
-            <li><strong>Commanditaire</strong> : Lisa, responsable produit</li>
-            <li><strong>Mission</strong> : référent technique senior</li>
-            <li><strong>Contrainte</strong> : démontrer des principes d'architecture (SOLID, séparation des responsabilités, patterns), pas la maîtrise d'un framework</li>
-            <li><strong>Délai</strong> : 4 semaines, soutenance devant des investisseurs</li>
-          </ul>
-        </section>
-
-        <!-- ===========================================================
-             3. PÉRIMÈTRE MVP
-             =========================================================== -->
-        <section>
-          <h2>Périmètre MVP — 6 US obligatoires</h2>
-          <div class="two-col">
+          <h2>Contexte fonctionnel</h2>
+          <div class="two-col" style="font-size:0.85em;">
             <div>
-              <h3 class="accent">Implémentées</h3>
+              <h3 class="accent">La mission</h3>
               <ul>
-                <li>US01 — Téléversement (≤ 1 Go)</li>
-                <li>US02 — Téléchargement via lien</li>
-                <li>US03 — Création de compte</li>
-                <li>US04 — Connexion (JWT)</li>
-                <li>US05 — Historique « Mes fichiers »</li>
-                <li>US06 — Suppression</li>
+                <li><strong>DataShare</strong> — jeune entreprise, MVP de transfert de fichiers sécurisé pour freelances et PME</li>
+                <li>Commanditaire : <strong>Lisa</strong>, responsable produit</li>
+                <li>Mon rôle : <strong>référent technique senior</strong></li>
+                <li>Délai : <strong>4 semaines</strong>, soutenance devant investisseurs</li>
               </ul>
             </div>
             <div>
-              <h3 style="color:#888;">Hors MVP <span class="badge warn">V2</span></h3>
-              <ul style="color:#888;">
+              <h3 class="accent">L'objectif</h3>
+              <ul>
+                <li>Permettre à un utilisateur d'<strong>uploader un fichier</strong> (≤ 1 Go)</li>
+                <li>Générer un <strong>lien public unique</strong></li>
+                <li>Permettre au destinataire de <strong>télécharger sans compte</strong></li>
+                <li>Consulter son <strong>historique</strong> et <strong>supprimer</strong> ses fichiers</li>
+              </ul>
+            </div>
+          </div>
+          <div style="margin-top:0.5em; font-size:0.76em; background:#fff8f0; border-left:3px solid var(--ds-primary); padding:0.4em 0.8em; border-radius:0 8px 8px 0;">
+            <strong>Contrainte OC :</strong> démontrer des principes d'architecture (SOLID, séparation des responsabilités, patterns) — pas la maîtrise d'un framework.
+          </div>
+        </section>
+
+        <!-- 3. PÉRIMÈTRE MVP -->
+        <section>
+          <h2>Périmètre — 6 US obligatoires</h2>
+          <div class="two-col" style="font-size:0.85em;">
+            <div>
+              <h3 class="accent">MVP implémenté <span class="tag ok">✓</span></h3>
+              <ul>
+                <li>US01 — Téléversement (≤ 1 Go, streaming)</li>
+                <li>US02 — Téléchargement via lien unique</li>
+                <li>US03 — Création de compte</li>
+                <li>US04 — Connexion (JWT 8 h)</li>
+                <li>US05 — Historique « Mes fichiers »</li>
+                <li>US06 — Suppression (soft delete + purge storage)</li>
+              </ul>
+            </div>
+            <div>
+              <h3 style="color:#999;">Hors MVP <span class="tag v2">V2</span></h3>
+              <ul style="color:#999;">
                 <li>US07 — Upload anonyme</li>
                 <li>US08 — Tags</li>
                 <li>US09 — Mot de passe par fichier</li>
-                <li>US10 — Expiration auto</li>
+                <li>US10 — Expiration automatique</li>
               </ul>
-              <p style="font-size:0.7em; margin-top:1em;">
-                <em>8 ambiguïtés de la spé tranchées en début de projet, schéma BDD laissé extensible.</em>
+              <p style="font-size:0.75em; margin-top:0.8em; color:#777;">
+                8 ambiguïtés de la spé tranchées en début de projet.<br>
+                Schéma BDD laissé extensible pour la V2.
               </p>
             </div>
           </div>
         </section>
 
-        <!-- ===========================================================
-             4. ARCHITECTURE
-             =========================================================== -->
+        <!-- 4. CHOIX TECHNOLOGIQUES -->
+        <section>
+          <h2>Choix technologiques</h2>
+          <table>
+            <thead>
+              <tr><th>Couche</th><th>Choix</th><th>Alternatives</th><th>Justification clé</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>Back</td><td><strong>Symfony 8</strong> / PHP 8.5</td><td>Laravel, NestJS</td><td>DI explicite → SOLID naturel ; pont Django</td></tr>
+              <tr><td>Auth</td><td><strong>JWT HS256</strong> + Lexik Bundle</td><td>Sessions, OAuth2</td><td>Imposé OC, pattern dominant Symfony, stateless</td></tr>
+              <tr><td>Front</td><td><strong>React 18</strong> + TypeScript + Vite</td><td>Vue, Angular</td><td>Productivité maximale sur 4 semaines</td></tr>
+              <tr><td>État</td><td><strong>Zustand</strong> + persist</td><td>Redux, Context</td><td>~1 KB, API minimaliste, JWT persisté</td></tr>
+              <tr><td>HTTP</td><td><strong>Axios</strong></td><td>Fetch, TanStack Query</td><td>Intercepteurs natifs → Bearer injecté partout</td></tr>
+              <tr><td>BDD</td><td><strong>PostgreSQL 18</strong></td><td>MongoDB</td><td>Modèle 100 % relationnel, transférable pro</td></tr>
+              <tr><td>Stockage</td><td>FS local + <strong>StorageInterface</strong></td><td>AWS S3 direct</td><td>DIP : swap S3 en V2 sans toucher au métier</td></tr>
+              <tr><td>Tests</td><td>PHPUnit · Vitest · Cypress · k6</td><td>—</td><td>Pyramide complète + perf endpoint critique</td></tr>
+            </tbody>
+          </table>
+          <p class="slide-note">Tableau complet (19 lignes, 4 colonnes avec alternatives) → document technique L1 §2</p>
+        </section>
+
+        <!-- 5. ARCHITECTURE -->
         <section>
           <h2>Architecture</h2>
-          <p style="text-align:left;">
-            Architecture <strong>client/serveur découplée</strong> en 3 couches.
-          </p>
-          <pre style="font-size:0.55em; line-height:1.4; text-align:left;"><code>┌──────────────────┐   HTTPS/JSON   ┌──────────────────┐
-│  Front SPA       │ ─────────────▶ │  API REST        │
-│  React + Vite    │ ◀───────────── │  Symfony 8       │
-│  + Zustand+Axios │   JWT Bearer   │  + Doctrine ORM  │
-└──────────────────┘                └────────┬─────────┘
-                                             │
-                                ┌────────────┴────────────┐
-                                ▼                         ▼
-                        ┌──────────────┐         ┌──────────────────┐
-                        │ PostgreSQL18 │         │ StorageInterface │
-                        │  users+files │         │ (FS V1, S3 V2)   │
-                        └──────────────┘         └──────────────────┘
-          </code></pre>
-          <p style="font-size:0.7em;">
-            <strong>5 ADRs</strong> tracent les décisions structurantes (streaming, JWT, stack, no-auto-login, design system).
-          </p>
-        </section>
-
-        <!-- ===========================================================
-             5. CHOIX TECHNOLOGIQUES (synthèse)
-             =========================================================== -->
-        <section>
-          <h2>Choix technologiques (synthèse)</h2>
-          <table>
-            <thead>
-              <tr><th>Couche</th><th>Choix</th><th>Pourquoi</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>Back</td><td>Symfony 8 / PHP 8.5</td><td>SOLID + DI explicite + pont conceptuel Django</td></tr>
-              <tr><td>Auth</td><td>JWT HS256 + Lexik Bundle</td><td>Imposé OC, pattern dominant Symfony</td></tr>
-              <tr><td>Front</td><td>React 18 + TypeScript + Vite</td><td>Productivité 4 sem., bundle léger (133 KB gz)</td></tr>
-              <tr><td>État</td><td>Zustand + persist</td><td>~1 KB, évite verbosité Redux</td></tr>
-              <tr><td>BDD</td><td>PostgreSQL 18</td><td>Modèle 100 % relationnel, transférable pro</td></tr>
-              <tr><td>Stockage</td><td>FS local + abstraction</td><td>DIP, swap S3 V2 sans toucher au métier</td></tr>
-              <tr><td>Tests</td><td>PHPUnit + Vitest + Cypress + k6</td><td>Pyramide complète + perf endpoint critique</td></tr>
-            </tbody>
-          </table>
-          <p style="font-size:0.6em;"><em>Tableau complet 4 colonnes (15+ lignes) dans le document technique L1 §2.</em></p>
-        </section>
-
-        <!-- ===========================================================
-             6. MODÈLE DE DONNÉES
-             =========================================================== -->
-        <section>
-          <h2>Modèle de domaine (UML)</h2>
-          <pre style="font-size:0.55em; line-height:1.4; text-align:left;"><code>┌─────────────────────────┐                ┌──────────────────────────┐
-│       <<entity>>        │                │       <<entity>>         │
-│         User            │                │         File             │
-├─────────────────────────┤                ├──────────────────────────┤
-│ + id : UUID             │                │ + id : UUID v7           │
-│ + email : String        │ 1        0..*  │ + userId : UUID          │
-│ + passwordHash : String │────possède────▶│ + name, sizeBytes, mime  │
-│ + createdAt, updatedAt  │                │ + storageKey             │
-└─────────────────────────┘                │ + createdAt, updatedAt   │
-                                           │ + deletedAt (soft delete)│
-                                           └──────────────────────────┘
-          </code></pre>
-          <ul style="font-size:0.75em;">
-            <li><strong>UUID v7</strong> pour File → ordonnancement temporel naturel + share-token</li>
-            <li><strong>Index composite</strong> <code>(user_id, created_at DESC)</code> aligné avec la requête US05</li>
-            <li><strong>Soft delete</strong> via <code>deletedAt</code> → fichier passe en « expiré » dans l'historique</li>
-            <li><strong>Schéma extensible V2</strong> — colonnes US08/09/10 ajoutables sans migration breaking</li>
-          </ul>
-        </section>
-
-        <!-- ===========================================================
-             7. API
-             =========================================================== -->
-        <section>
-          <h2>API REST — 8 endpoints</h2>
-          <table>
-            <thead>
-              <tr><th>Méthode</th><th>Path</th><th>Auth</th><th>US</th></tr>
-            </thead>
-            <tbody>
-              <tr><td>POST</td><td>/api/auth/register</td><td>—</td><td>US03</td></tr>
-              <tr><td>POST</td><td>/api/auth/login</td><td>—</td><td>US04</td></tr>
-              <tr><td>GET</td><td>/api/me</td><td>JWT</td><td>support</td></tr>
-              <tr><td>POST</td><td>/api/files</td><td>JWT</td><td>US01</td></tr>
-              <tr><td>GET</td><td>/api/files</td><td>JWT</td><td>US05</td></tr>
-              <tr><td>DELETE</td><td>/api/files/{id}</td><td>JWT</td><td>US06</td></tr>
-              <tr><td>GET</td><td>/api/share/{token}</td><td>—</td><td>US02</td></tr>
-              <tr><td>GET</td><td>/api/share/{token}/download</td><td>—</td><td>US02</td></tr>
-            </tbody>
-          </table>
-          <p style="font-size:0.7em;">
-            <strong>OpenAPI 3.0.3</strong> · envelope <code>{ data }</code> succès · <strong>RFC 7807</strong> erreurs · camelCase · ISO 8601 UTC.
-          </p>
-        </section>
-
-        <!-- ===========================================================
-             8. SÉCURITÉ
-             =========================================================== -->
-        <section>
-          <h2>Sécurité</h2>
-          <div class="two-col" style="font-size:0.85em;">
-            <div>
-              <h3 class="accent">Authentification</h3>
-              <ul>
-                <li><strong>Argon2id</strong> (OWASP A02, NIST SP 800-63B)</li>
-                <li><strong>JWT HS256</strong> · 8 h · Bearer · payload minimal</li>
-                <li>Passphrase 256 bits, rotation documentée</li>
-              </ul>
+          <div class="two-col" style="font-size:0.82em; align-items:center;">
+            <div style="display:flex; align-items:center; justify-content:center;">
+              <img src="architecture.png" style="max-width:100%; max-height:390px; object-fit:contain;" alt="Schéma d'architecture DataShare" />
             </div>
             <div>
-              <h3 class="accent">Anti-énumération (OWASP A01/A07)</h3>
+              <h3 class="accent">5 ADRs structurants</h3>
               <ul>
-                <li><code>POST /login</code> · 401 unifié</li>
-                <li><code>DELETE /files/{id}</code> · 404 unifié (4 cas)</li>
-                <li><code>GET /share/{token}</code> · 404 unifié (3 cas)</li>
-              </ul>
-            </div>
-          </div>
-          <div class="two-col" style="font-size:0.85em; margin-top:1em;">
-            <div>
-              <h3 class="accent">Validation upload</h3>
-              <ul>
-                <li>Blacklist 12 extensions client + serveur</li>
-                <li><strong>Magic bytes</strong> serveur (anti-renommage)</li>
-                <li>413 streaming si Content-Length &gt; 1 Go</li>
-              </ul>
-            </div>
-            <div>
-              <h3 class="accent">Scan deps</h3>
-              <ul>
-                <li><code>npm audit</code> · <strong>0 vuln</strong></li>
-                <li><code>composer audit</code> · <strong>0 vuln</strong></li>
+                <li><strong>ADR 0001</strong> — Streaming upload<br><small style="color:#666;">RAM constante, agnostique stockage</small></li>
+                <li><strong>ADR 0002</strong> — JWT HS256<br><small style="color:#666;">localStorage + Bearer, 8 h, sans refresh</small></li>
+                <li><strong>ADR 0003</strong> — Stack technique<br><small style="color:#666;">6 critères pondérés, Symfony + React + Postgres</small></li>
+                <li><strong>ADR 0004</strong> — Pas d'auto-login<br><small style="color:#666;">SRP register/login, extensible email V2</small></li>
+                <li><strong>ADR 0005</strong> — Design system<br><small style="color:#666;">CSS Modules + tokens, 9 composants</small></li>
               </ul>
             </div>
           </div>
         </section>
 
-        <!-- ===========================================================
-             9. TESTS + COVERAGE
-             =========================================================== -->
+        <!-- 6. MODÈLE DE DONNÉES + API -->
         <section>
-          <h2>Tests — pyramide complète</h2>
+          <h2>Modèle de données &amp; API</h2>
+          <div class="two-col" style="font-size:0.8em; align-items:start;">
+            <div>
+              <h3 class="accent">Modèle de domaine (UML)</h3>
+              <img src="mermaid-diagram-2026-04-27-183321.png" style="max-width:100%; max-height:260px; object-fit:contain;" alt="Modèle de domaine UML User-File" />
+              <ul style="margin-top:0.3em; font-size:0.85em;">
+                <li>Index composite <code>(user_id, created_at DESC)</code></li>
+                <li><code>deletedAt</code> ajouté (soft delete US06)</li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="accent">8 endpoints REST</h3>
+              <table style="font-size:0.82em;">
+                <thead><tr><th>Méth.</th><th>Path</th><th>Auth</th></tr></thead>
+                <tbody>
+                  <tr><td>POST</td><td>/api/auth/register</td><td>—</td></tr>
+                  <tr><td>POST</td><td>/api/auth/login</td><td>—</td></tr>
+                  <tr><td>POST</td><td>/api/files</td><td><span class="tag jwt">JWT</span></td></tr>
+                  <tr><td>GET</td><td>/api/files</td><td><span class="tag jwt">JWT</span></td></tr>
+                  <tr><td>DELETE</td><td>/api/files/{id}</td><td><span class="tag jwt">JWT</span></td></tr>
+                  <tr><td>GET</td><td>/api/share/{token}</td><td>—</td></tr>
+                  <tr><td>GET</td><td>/api/share/{token}/download</td><td>—</td></tr>
+                </tbody>
+              </table>
+              <p style="font-size:0.72em; margin-top:0.5em;">RFC 7807 erreurs · envelope <code>{ data }</code> · camelCase · ISO 8601</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. DÉMONSTRATION -->
+        <section>
+          <h2>Démonstration</h2>
+          <ol style="font-size:0.9em; line-height:1.8;">
+            <li>Création de compte → connexion → page upload</li>
+            <li>Upload d'un fichier · obtention du <strong>lien public unique</strong></li>
+            <li>Ouverture du lien en navigation privée (destinataire anonyme)</li>
+            <li>Téléchargement via <code>Content-Disposition: attachment</code> serveur</li>
+            <li>« Mon espace » → historique · filtre Actifs/Supprimés</li>
+            <li>Suppression → blob purgé du stockage · métadonnée conservée</li>
+          </ol>
+          <div style="margin-top:0.8em; font-size:0.75em; background:#f8f8f8; border-radius:8px; padding:0.6em 1em;">
+            <strong>Gestion d'erreurs visible :</strong> upload de <code>.exe</code> → rejet client + serveur (magic bytes) · fichier > 1 Go → 413 avant chargement du body · token inconnu → 404 anti-énumération
+          </div>
+          <p class="slide-note">Vue mobile via DevTools : drawer sidebar + kebab menu sur les file rows</p>
+        </section>
+
+        <!-- 8. DOCUMENTATION TECHNIQUE -->
+        <section>
+          <h2>Documentation technique</h2>
+          <div class="two-col" style="font-size:0.82em;">
+            <div>
+              <h3 class="accent">README — installation en 1 commande</h3>
+              <pre style="font-size:0.78em; background:#f8f8f8; padding:0.7em; border-radius:8px; line-height:1.5;"><code style="background:none; color:#222; padding:0;">git clone …/OC-DataShare
+make install   # deps + BDD + JWT keypair
+
+make back      # API Symfony :8000
+make front     # Vite :5173
+
+make test-back    # PHPUnit  77 tests
+make test-front   # Vitest  128 tests
+make test-e2e     # Cypress  19 scénarios
+make perf-download # k6 50VUs / 1 min</code></pre>
+            </div>
+            <div>
+              <h3 class="accent">OpenAPI 3.0.3</h3>
+              <ul>
+                <li><code>docs/conception/openapi.yaml</code></li>
+                <li>8 endpoints · schémas FileSummary, SharedFile, ErrorProblem</li>
+                <li>Visualisable sur <strong>editor.swagger.io</strong></li>
+              </ul>
+              <h3 class="accent" style="margin-top:0.5em;">4 fichiers qualité</h3>
+              <ul>
+                <li><code>TESTING.md</code> — pyramide + coverage</li>
+                <li><code>SECURITY.md</code> — scans + procédures</li>
+                <li><code>PERF.md</code> — k6 + Lighthouse</li>
+                <li><code>MAINTENANCE.md</code> — MAJ + rollback + RTO/RPO</li>
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 9. TESTS + QUALITÉ -->
+        <section>
+          <h2>Tests &amp; qualité</h2>
           <div class="kpi-grid">
             <div class="kpi-card">
               <div class="value">224</div>
@@ -319,216 +337,114 @@
               <div class="label">Coverage lignes back</div>
             </div>
             <div class="kpi-card">
-              <div class="value">93,5 %</div>
+              <div class="value">94,41 %</div>
               <div class="label">Coverage lignes front</div>
             </div>
           </div>
-          <table>
+          <table style="margin-top:0.3em;">
             <thead><tr><th>Niveau</th><th>Outil</th><th>Volume</th></tr></thead>
             <tbody>
-              <tr><td>Unit + Integration + Functional back</td><td>PHPUnit 13 + PCOV</td><td>57</td></tr>
-              <tr><td>Unit front (services + composants)</td><td>Vitest 4 + RTL + jsdom</td><td>122</td></tr>
-              <tr><td>E2E parcours utilisateur</td><td>Cypress 15 (headless)</td><td>19</td></tr>
+              <tr><td>Back — unit · integration · functional</td><td>PHPUnit 13 + PCOV</td><td>77</td></tr>
+              <tr><td>Front — unit · composants</td><td>Vitest 4 + RTL + jsdom</td><td>128</td></tr>
+              <tr><td>E2E — parcours utilisateur</td><td>Cypress 15 (headless)</td><td>19</td></tr>
             </tbody>
           </table>
-          <p style="font-size:0.7em;"><strong>Cible OC ≥ 70 %</strong> battue 1,3× sur les 2 stacks.</p>
+          <p style="font-size:0.68em; margin-top:0.4em;"><strong>Cible OC ≥ 70 %</strong> battue 1,3× sur les 2 stacks · <code>npm audit</code> + <code>composer audit</code> : <strong>0 vulnérabilité</strong></p>
         </section>
 
-        <!-- ===========================================================
-             10. PERFORMANCE
-             =========================================================== -->
+        <!-- 10. PERFORMANCE -->
         <section>
-          <h2>Performance — endpoint critique download</h2>
-          <p style="text-align:left; font-size:0.85em;">
-            <strong>k6</strong> · 50 VUs concurrents · 1 min · fichier 1 Mo
-          </p>
-          <div class="kpi-grid">
-            <div class="kpi-card">
-              <div class="value">172/s</div>
-              <div class="label">Throughput</div>
-            </div>
-            <div class="kpi-card">
-              <div class="value">453 ms</div>
-              <div class="label">Latence p95 (cible &lt; 500)</div>
-            </div>
-            <div class="kpi-card">
-              <div class="value">0</div>
-              <div class="label">Erreurs / 10 344</div>
-            </div>
-          </div>
-          <p style="text-align:left; font-size:0.85em;">
-            <strong>11 GB transférés en 1 min, RAM PHP stable 80-100 Mo</strong> → l'archi <strong>streaming (ADR 0001)</strong> est validée empiriquement sous charge.
-          </p>
-        </section>
-
-        <!-- ===========================================================
-             11. PERFORMANCE FRONT
-             =========================================================== -->
-        <section>
-          <h2>Performance — bundle + Lighthouse</h2>
-          <div class="kpi-grid">
-            <div class="kpi-card">
-              <div class="value">98/100</div>
-              <div class="label">Lighthouse Perf</div>
-            </div>
-            <div class="kpi-card">
-              <div class="value">133 KB</div>
-              <div class="label">JS gzipped (cible &lt; 250)</div>
-            </div>
-            <div class="kpi-card">
-              <div class="value">0 ms</div>
-              <div class="label">Total Blocking Time</div>
-            </div>
-          </div>
-          <ul style="font-size:0.85em;">
-            <li>FCP 2,0 s · LCP 2,0 s · CLS <strong>0</strong></li>
-            <li>Best Practices <strong>100/100</strong>, A11y 92/100</li>
-            <li><strong>Pas de blob côté browser</strong> pour le download → symétrie ADR 0001 sur le front (RAM constante des 2 côtés)</li>
-          </ul>
-        </section>
-
-        <!-- ===========================================================
-             12. DÉMONSTRATION
-             =========================================================== -->
-        <section>
-          <h2>Démonstration</h2>
-          <p style="text-align:left;">Parcours bout-en-bout (live) :</p>
-          <ol style="font-size:0.95em;">
-            <li>Création de compte → connexion → arrivée sur l'espace upload</li>
-            <li>Upload d'un fichier · obtention du lien public unique</li>
-            <li>Ouverture du lien dans un onglet privé (destinataire anonyme)</li>
-            <li>Téléchargement (déclenché par <code>Content-Disposition</code> serveur)</li>
-            <li>Retour sur « Mon espace » · visualisation de l'historique · suppression</li>
-            <li>Refresh : le fichier passe en « Expiré » (soft delete)</li>
-          </ol>
-          <p style="font-size:0.8em;"><em>Bascule mobile via DevTools : drawer + kebab menu sur file rows.</em></p>
-        </section>
-
-        <!-- ===========================================================
-             13. IA — POSTURE
-             =========================================================== -->
-        <section>
-          <h2>Utilisation de l'IA — posture</h2>
-          <p style="text-align:left; font-size:0.85em;">
-            <strong>Binômage exigeant et asymétrique</strong> tout au long du projet :
-          </p>
-          <ul style="font-size:0.85em;">
-            <li>Le <strong>référent tech</strong> (moi) pilote, conçoit l'architecture, assigne les tâches, <strong>revoit systématiquement</strong></li>
-            <li>Le <strong>copilote IA</strong> propose, argumente, code après validation, montre les diffs</li>
-          </ul>
-          <p style="text-align:left; font-size:0.85em;">
-            Règle absolue (séance 1) : <strong>jamais de code sans feu vert explicite</strong> + explication amont (quoi/à quoi ça sert/pourquoi).
-          </p>
-          <p style="text-align:left; font-size:0.85em;">
-            <strong>Évolution</strong> : pédagogie granulaire (étapes 1-2) → supervision rapprochée (étape 3) → vitrine OC sur US01 → collaboration normale (US02-06) → exécution séquentielle qualité (étape 5).
-          </p>
-        </section>
-
-        <!-- ===========================================================
-             14. IA — VITRINE US01
-             =========================================================== -->
-        <section>
-          <h2>Vitrine OC — US01 isolée</h2>
-          <p style="text-align:left; font-size:0.85em;">
-            La consigne OC impose <strong>l'IA sur 1 US uniquement</strong>. Interprétation appliquée à la lettre :
-          </p>
-          <ul style="font-size:0.85em;">
-            <li><strong>Branche dédiée</strong> <code>feat/us01-upload</code></li>
-            <li><strong>9 commits <code>feat(ai):</code></strong> isolés par sous-tâche</li>
-            <li><strong>Validation orale</strong> AVANT chaque commit</li>
-            <li><strong>Document dédié</strong> <code>docs/ai-collab/vitrine-us01-upload.md</code></li>
-            <li>Comparaison <strong>vitrine ↔ collaboration normale</strong> (US02/05/06) sans <code>feat(ai):</code></li>
-          </ul>
-          <p style="text-align:left; font-size:0.85em;">
-            → matière directe pour la <strong>section 8 du livrable 1</strong> et défense à l'oral.
-          </p>
-        </section>
-
-        <!-- ===========================================================
-             15. DIFFICULTÉS RENCONTRÉES
-             =========================================================== -->
-        <section>
-          <h2>Difficultés rencontrées</h2>
-          <ul style="font-size:0.85em;">
-            <li><strong>Divergences silencieuses du copilote</strong> par rapport aux ADRs (séance 11 — entité File, StorageInterface). Le copilote a produit du code qui ne respectait pas les décisions actées.</li>
-            <li><strong>Récidive « style customisé vs DS »</strong> sur 2 séances consécutives (12, 13). Pattern appris en mémoire après le 2ème incident.</li>
-            <li><strong>Incohérence contrat-interface §4.6</strong> (hard delete) vs modèle de domaine (soft delete via <code>deletedAt</code>) découverte tardivement en séance 13.</li>
-            <li><strong>Wipe BDD</strong> entre Cypress et passe UI (confusion <code>datashare</code>/<code>datashare_test</code>).</li>
-            <li><strong>Itérations UI longues</strong> (~12-15 micro-ajustements par passe), pas de mécanisme de batching efficace.</li>
-            <li><strong>Surcharge cognitive</strong> en fin de séance dense (séance 11 — 5 décisions empilées).</li>
-          </ul>
-        </section>
-
-        <!-- ===========================================================
-             16. SOLUTIONS APPORTÉES
-             =========================================================== -->
-        <section>
-          <h2>Solutions apportées</h2>
-          <ul style="font-size:0.85em;">
-            <li><strong>Mémoire IA persistante</strong> — 17 mémoires accumulées (profil user, style de communication, règles de revue, pièges archi). La calibration ne se perd pas entre séances.</li>
-            <li><strong>Règle « grep ADR/conception avant tout code »</strong> ajoutée en mémoire après la séance 11. Plus de divergences silencieuses ensuite.</li>
-            <li><strong>Mémoire dédiée style DS</strong> (<code>feedback_align_ds_avant_style.md</code>) après le 2ème incident.</li>
-            <li><strong>Workflow seed idempotent</strong> (<code>make seed-demo</code>) pour restaurer rapidement la BDD post-Cypress.</li>
-            <li><strong>Découpage en lots</strong> sur l'étape 5 — 5 lots séquentiels pour ne pas se perdre dans le scope qualité dense.</li>
-            <li><strong>Recalibration cognitive explicite</strong> séance 11 → 2 mémoires ajoutées (profil pro, communication 1 question à la fois).</li>
-          </ul>
-        </section>
-
-        <!-- ===========================================================
-             17. ÉVOLUTIONS V2
-             =========================================================== -->
-        <section>
-          <h2>Évolutions V2 préparées</h2>
-          <div class="two-col" style="font-size:0.8em;">
+          <h2>Performance</h2>
+          <div class="two-col" style="font-size:0.85em;">
             <div>
-              <h3 class="accent">Métier</h3>
-              <ul>
-                <li>US07 — Upload anonyme (schéma déjà NULLABLE)</li>
-                <li>US08 — Tags</li>
-                <li>US09 — Mot de passe par fichier</li>
-                <li>US10 — Expiration auto + cron purge</li>
-                <li>Refresh token JWT</li>
-                <li>Reset mot de passe par email</li>
-                <li>RGPD : export + suppression compte cascadant</li>
-              </ul>
+              <h3 class="accent">Endpoint critique — download (k6)</h3>
+              <p style="font-size:0.8em; color:#666;">50 VUs · 1 min · fichier 1 Mo</p>
+              <div class="kpi-grid" style="grid-template-columns: 1fr 1fr; gap:0.6em;">
+                <div class="kpi-card">
+                  <div class="value" style="font-size:1.5em;">172/s</div>
+                  <div class="label">Throughput</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="value" style="font-size:1.5em;">453 ms</div>
+                  <div class="label">p95 (cible &lt; 500)</div>
+                </div>
+              </div>
+              <p style="font-size:0.75em; margin-top:0.5em;">11 GB transférés · 0 erreur / 10 344 · RAM PHP stable 80-100 Mo → <strong>ADR 0001 streaming validé sous charge</strong></p>
             </div>
             <div>
-              <h3 class="accent">Infrastructure</h3>
-              <ul>
-                <li>Bascule storage S3/MinIO (interface en place)</li>
-                <li>CDN devant download</li>
-                <li>CI GitHub Actions (tests + audit + Lighthouse CI)</li>
-                <li>Health checks <code>/healthz</code> <code>/readyz</code></li>
-                <li>Tracing OpenTelemetry + Prometheus</li>
-                <li>Rate limiting <code>/auth/login</code> + <code>/files</code></li>
+              <h3 class="accent">Bundle front — Lighthouse</h3>
+              <div class="kpi-grid" style="grid-template-columns: 1fr 1fr; gap:0.6em;">
+                <div class="kpi-card">
+                  <div class="value" style="font-size:1.5em;">98/100</div>
+                  <div class="label">Lighthouse Perf</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="value" style="font-size:1.5em;">133 KB</div>
+                  <div class="label">JS gzipped</div>
+                </div>
+              </div>
+              <ul style="font-size:0.75em; margin-top:0.5em;">
+                <li>FCP 2,0 s · TBT <strong>0 ms</strong> · CLS <strong>0</strong></li>
+                <li>Best Practices <strong>100/100</strong> · A11y 92/100</li>
               </ul>
             </div>
           </div>
         </section>
 
-        <!-- ===========================================================
-             18. CLOSING
-             =========================================================== -->
+        <!-- 11. PILOTAGE IA -->
+        <section>
+          <h2>Pilotage &amp; revue du copilote IA</h2>
+          <div class="two-col" style="font-size:0.82em;">
+            <div>
+              <h3 class="accent">Posture tout au long du projet</h3>
+              <ul>
+                <li>Je pilote, conçois, assigne, <strong>revois systématiquement</strong></li>
+                <li>Règle absolue : <strong>jamais de code sans feu vert explicite</strong></li>
+                <li>Toute décision argumentée → tracée dans les ADRs</li>
+              </ul>
+              <h3 class="accent" style="margin-top:0.4em;">US01 — vitrine OC</h3>
+              <ul>
+                <li>Branche dédiée <code>feat/us01-upload</code></li>
+                <li>9 commits <code>feat(ai):</code> isolés par sous-tâche</li>
+                <li>Validation orale avant chaque commit</li>
+                <li>Doc dédiée <code>vitrine-us01-upload.md</code></li>
+              </ul>
+            </div>
+            <div>
+              <h3 class="accent">Recadrages concrets</h3>
+              <ul>
+                <li><strong>R1 — Entité File</strong> : 5 divergences vs modèle de domaine → question « on est conforme ? » → réécriture complète.</li>
+                <li><strong>R2 — StorageInterface</strong> : signature divergeait de l'ADR 0003 D4 → réalignement + ADR enrichi.</li>
+                <li><strong>R3 — Scope MVP</strong> : US10 expiration détectée hors périmètre → non implémentée, tracée dans NOTES.md.</li>
+              </ul>
+              <p style="font-size:0.72em; margin-top:0.4em; color:#555;"><em>Quand le copilote dérive, je recadre — le code est réécrit, la règle est persistée.</em></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 12. CLOSING -->
         <section class="corail-bg">
-          <h2>Merci</h2>
-          <p style="margin-top:2em;">Questions, échanges, retours.</p>
-          <p style="font-size:0.6em; margin-top:3em;">
-            Repo : <code>github.com/Jean-Baptiste-Paris/OC-DataShare</code><br>
-            Doc technique L1 · Tests · Sécurité · Perf · Maintenance · Journal IA
-          </p>
+          <h2 style="margin-bottom:0.6em;">Merci</h2>
+          <p style="font-size:0.9em;">Questions, échanges, retours.</p>
+          <div style="margin-top:2em; font-size:0.65em; opacity:0.85; line-height:2;">
+            <code>github.com/Jean-Baptiste-Paris/OC-DataShare</code><br>
+            L1 Documentation technique · OpenAPI · TESTING · SECURITY · PERF · MAINTENANCE · Journal IA
+          </div>
         </section>
 
       </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/dist/reveal.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/reveal.js@5/plugin/highlight/highlight.js"></script>
     <script>
       Reveal.initialize({
         hash: true,
         slideNumber: 'c/t',
         transition: 'fade',
-        plugins: [RevealHighlight],
+        width: 1280,
+        height: 720,
+        margin: 0.04,
+        disableLayout: false,
       });
     </script>
   </body>

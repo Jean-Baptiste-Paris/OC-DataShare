@@ -1,10 +1,4 @@
-# Livrable 1 — Documentation technique (DataShare)
-
-> Source du gabarit : `docs/P3+EDO+P4+AL+-+Modèle+de+Documentation+technique.odt`.
-> Destinataire : évaluateur OC (jouant Lisa, responsable produit) + investisseurs fictifs.
-> Export final attendu : PDF unique, fichier nommé `Nom_Prenom_1_documentation_042026.pdf`.
-
----
+# Documentation technique — DataShare
 
 ## 1. Architecture de l'application
 
@@ -55,9 +49,7 @@ Détails dans `docs/ai-collab/decisions/`.
 
 ---
 
-## 2. Choix technologiques justifiés (1-2 pages)
-
-> **Seule section bornée explicitement.** Tableau à 4 colonnes imposé.
+## 2. Choix technologiques justifiés
 
 | Élément | Technologie choisie | Alternatives | Justification |
 |---|---|---|---|
@@ -92,7 +84,7 @@ Détails dans `docs/ai-collab/decisions/`.
 
 ### 3.2 Diagramme de classes
 
-Source : `docs/conception/modele-domaine.md` (Mermaid). Image SVG/PNG à intégrer ici dans le PDF.
+Source : `docs/conception/modele-domaine.md` (Mermaid).
 
 ```
 ┌─────────────────────────┐                    ┌──────────────────────────┐
@@ -258,10 +250,8 @@ Exposé dans `FileSummary` (cf. `docs/conception/openapi.yaml`).
 
 | Niveau | Outil | Volume |
 |---|---|---|
-| Unit back | PHPUnit + PCOV | 23 |
-| Integration back | PHPUnit | 6 |
-| Functional back | PHPUnit + KernelBrowser | 28 |
-| Unit front | Vitest + RTL + jsdom | 122 |
+| Back (unit · integration · functional) | PHPUnit + PCOV | 77 |
+| Front (unit · composants) | Vitest + RTL + jsdom | 128 |
 | E2E | Cypress 15 (Electron headless) | 19 |
 | **Total** | | **224** |
 
@@ -270,7 +260,7 @@ Exposé dans `FileSummary` (cf. `docs/conception/openapi.yaml`).
 | Stack | Lignes | Branches | Fonctions | Statements | Cible OC |
 |---|---:|---:|---:|---:|---|
 | Back (PCOV) | **93,71 %** | n/a | 83,61 % | n/a | ≥ 70 % ✅ |
-| Front (V8) | **93,5 %** | 86,48 % | 85,95 % | 90,8 % | ≥ 70 % ✅ |
+| Front (V8) | **94,41 %** | 87,07 % | 86,66 % | 91,59 % | ≥ 70 % ✅ |
 
 Threshold à 70 sur Vitest qui fail le run si une métrique passe en-dessous. Captures HTML : `api/var/coverage/index.html` et `front/coverage/index.html`.
 
@@ -415,7 +405,7 @@ make audit                  # npm audit + composer audit (full + prod-only)
 - **Vitesse de production** : 224 tests + 14 séances + 5 ADRs + 4 docs qualité + 8 endpoints + 9 composants DS livrés en ~25 jours calendaires. La consigne 60 h s'est traduite en environ ~50 h effectives — gain net du copilote sur la productivité brute.
 - **Discipline méthodologique** : la posture « explication amont + validation explicite » empêche le copilote de partir en autonomie. Le référent tech reste **auteur des décisions**, le copilote reste **exécutant éclairé**.
 - **Vitrine OC US01** : la méthodologie isolée sur 1 US (branche dédiée, commits `feat(ai):`, journal détaillé, doc dédiée) répond à la lettre à la consigne « IA sur 1 US uniquement ». Comparaison vitrine ↔ collaboration normale (US02/05/06) à raconter à l'oral comme illustration de la maîtrise du curseur posture.
-- **Rigueur de test continue** : la pyramide a grandi à mesure des US, sans rattrapage en fin de projet. Coverage 93,7 % back / 93,5 % front, cible OC 70 % battue 1,3×.
+- **Rigueur de test continue** : la pyramide a grandi à mesure des US, sans rattrapage en fin de projet. Coverage 93,7 % back / 94,41 % front, cible OC 70 % battue 1,3×.
 - **Mémoire IA persistante enrichie** : 17 mémoires sur le profil user + le style de communication + les arbitrages méthodologiques + les pièges (modèle de domaine vs code, DS vs style customisé). La calibration ne se perd pas entre séances.
 
 **Limites**
