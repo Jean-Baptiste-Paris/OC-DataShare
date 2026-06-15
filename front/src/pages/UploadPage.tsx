@@ -224,7 +224,7 @@ export function UploadPage() {
           </div>
         ) : (
           <div className={styles.cta}>
-            <p className={styles.ctaText}>Tu veux partager un fichier ?</p>
+            <h1 className={styles.ctaText}>Tu veux partager un fichier ?</h1>
             <div className={styles.ctaButtonWrap}>
               <span className={styles.ctaButtonHalo} aria-hidden="true" />
               <button
